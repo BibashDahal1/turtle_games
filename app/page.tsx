@@ -1,69 +1,212 @@
-import Image from "next/image";
+import SceneMount from "@/components/SceneMount";
+import ScrollDriver from "@/components/ScrollDriver";
+import Hero from "@/components/sections/Hero";
+import {
+  btnGhost,
+  btnLight,
+  btnSolid,
+  eyebrow,
+  glass,
+  grad,
+  lead,
+  sec,
+  title,
+} from "@/components/ui/classes";
+import Logo from "@/components/Logo";
+import WaterRipple from "@/components/effects/WaterRipple";
+
+const NAV = ["Games", "About", "Rules", "Blog", "Contact"];
+
+const STEPS = [
+  {
+    n: 1,
+    title: "Build Your Deck",
+    text: "Choose your cards and plan your strategy.",
+  },
+  {
+    n: 2,
+    title: "Play Your Turns",
+    text: "Use cards, trigger effects and outplay your rivals.",
+  },
+  { n: 3, title: "Claim Victory", text: "Be the last one standing!" },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      <WaterRipple scope="window" quality={0.65} intensity={0.7} />
+      <SceneMount />
+      <ScrollDriver />
+
+      <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-4 bg-linear-to-b from-page/80 to-transparent px-4 py-5 md:px-12">
+        <a
+          href="#home"
+          aria-label="Turtle Games home"
+          className="flex items-center"
+        >
+          <Logo priority />
+        </a>
+        <nav className="hidden gap-10 text-sm font-medium md:flex">
+          {NAV.map((n) => (
+            <a key={n} href={`#${n.toLowerCase()}`}>
+              {n}
+            </a>
+          ))}
+        </nav>
+        <a href="#cta" className={`${btnSolid} !px-5 !py-2 !text-xs`}>
+          Get the Game
+        </a>
+      </header>
+
+      <main className="relative">
+        {/* 1. HERO (full-bleed, has its own padding) */}
+        <Hero />
+
+        {/* Remaining sections: built one at a time next */}
+        <div className="relative z-10 px-4 sm:px-8 lg:px-16">
+          {/* OCEAN LEGENDS */}
+          <section
+            id="games"
+            className={`${sec} min-h-svh gap-8 md:flex-row md:items-center md:justify-between`}
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <div data-reveal className="max-w-[440px]">
+              <p className={eyebrow}>Our first game</p>
+              <h2 className={title}>Ocean Legends</h2>
+              <p className={lead}>
+                A strategic card game set in the mystical depths of the ocean.
+              </p>
+              <ul className="mb-7 flex gap-6 text-sm text-muted">
+                <li className="flex flex-col">
+                  <b className="text-base text-ink">Strategic</b>
+                  <span>Gameplay</span>
+                </li>
+                <li className="flex flex-col">
+                  <b className="text-base text-ink">2–4</b>
+                  <span>Players</span>
+                </li>
+                <li className="flex flex-col">
+                  <b className="text-base text-ink">20–40</b>
+                  <span>Min</span>
+                </li>
+              </ul>
+              <a href="#about" className={btnGhost}>
+                Learn More
+              </a>
+            </div>
+            <aside
+              data-reveal
+              className={`${glass} w-full p-5 text-sm leading-normal md:w-[250px]`}
+            >
+              <h3 className="mb-1.5 font-bold">Ocean Guardian</h3>
+              <span className="inline-block rounded-md bg-accent px-2.5 py-0.5 text-[0.7rem] font-semibold text-onaccent">
+                Rare
+              </span>
+              <p className="mt-2">
+                A wise protector of the deep. Brings balance to your hand.
+              </p>
+              <hr className="my-3 border-accent/30" />
+              <p>
+                <b>Cost:</b> 3
+              </p>
+              <p>
+                <b>Effect:</b> Draw 1 card and gain 1 Energy.
+              </p>
+            </aside>
+          </section>
+
+          {/* ABOUT */}
+          <section id="about" className={`${sec} min-h-svh`}>
+            <div data-reveal className="max-w-[440px]">
+              <p className={eyebrow}>About the game</p>
+              <h2 className={title}>Dive into a World of Strategy</h2>
+              <p className={lead}>
+                Ocean Legends is a beautifully crafted card game where strategy
+                meets the sea. Build powerful combos, outsmart your opponents,
+                and harness the ocean&apos;s might!
+              </p>
+              <a href="#rules" className={btnGhost}>
+                Discover More
+              </a>
+            </div>
+          </section>
+
+          {/* HOW TO PLAY */}
+          <section
+            id="rules"
+            className={`${sec} min-h-svh gap-8 md:flex-row md:items-center md:justify-between`}
           >
-            Documentation
-          </a>
+            <div data-reveal className="max-w-[440px]">
+              <p className={eyebrow}>How to play</p>
+              <h2 className={title}>Simple Rules, Endless Possibilities</h2>
+              <p className={lead}>
+                Easy to learn, exciting to master. Here&apos;s how you can play:
+              </p>
+              <a href="#cta" className={btnGhost}>
+                View Full Rules
+              </a>
+            </div>
+            <ol className="flex list-none flex-col gap-6 md:flex-row md:gap-12 md:text-center">
+              {STEPS.map((s) => (
+                <li
+                  key={s.n}
+                  data-reveal
+                  className="max-w-[190px] text-sm text-muted"
+                >
+                  <span
+                    className={`${glass} inline-grid size-14 place-items-center !rounded-full text-xl font-extrabold text-accent`}
+                  >
+                    {s.n}
+                  </span>
+                  <h3 className="mt-3 mb-1 text-base font-bold text-ink">
+                    {s.title}
+                  </h3>
+                  <p>{s.text}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* CTA */}
+          <section
+            id="cta"
+            className={`${sec} min-h-[70svh] items-center text-center`}
+          >
+            <h2
+              data-reveal
+              className={`${grad} mb-4 text-[clamp(2rem,5vw,3.2rem)]`}
+            >
+              Ready to Dive In?
+            </h2>
+            <p data-reveal className="mb-6 text-ink/85">
+              Get your copy of Ocean Legends today and start your journey!
+            </p>
+            <a data-reveal href="#" className={btnLight}>
+              Buy Now
+            </a>
+          </section>
         </div>
       </main>
-    </div>
+
+      <footer
+        id="blog"
+        className="relative z-10 flex flex-wrap items-center justify-between gap-4 bg-page/90 px-4 py-6 text-xs text-muted md:px-12"
+      >
+        <a
+          href="#home"
+          aria-label="Turtle Games home"
+          className="flex items-center"
+        >
+          <Logo className="h-9 md:h-10" />
+        </a>
+        <nav className="flex gap-8 text-sm font-medium">
+          {NAV.map((n) => (
+            <a key={n} href={`#${n.toLowerCase()}`}>
+              {n}
+            </a>
+          ))}
+        </nav>
+        <small>© 2026 Turtle Games. All rights reserved.</small>
+      </footer>
+    </>
   );
 }
