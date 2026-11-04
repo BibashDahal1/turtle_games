@@ -8,7 +8,7 @@ import {
   type MutableRefObject,
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { RoundedBox, Sparkles, useTexture } from "@react-three/drei";
+import { Sparkles, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { scroll } from "@/lib/scrollState";
 import { MASCOT_FRAG, MASCOT_SIZE, MASCOT_VERT } from "@/lib/mascotShader";
@@ -20,8 +20,6 @@ import TurtleSwimmer, {
 
 /* Tune these to match your page height / section positions. */
 const DEPTH = 14; // how far the camera travels down the world over the full scroll
-const STAGE_Y = -4.2; // "Ocean Legends" showcase  (~30% scroll)
-const FAN_Y = -8.2; // "About" card fan          (~58% scroll)
 const MASCOT_H = 4.3; // mascot height in world units
 const CAM_Z = 6.5; // camera distance
 const HALF_FOV = Math.tan(THREE.MathUtils.degToRad(22.5));
@@ -125,39 +123,6 @@ function Trail({ pose }: { pose: MutableRefObject<Pose> }) {
   );
 }
 
-/* ---------- placeholder card (swap faces for useTexture('/cards/x.png')) ---------- */
-function Card({
-  color,
-  position = [0, 0, 0],
-  rotation = [0, 0, 0],
-  scale = 1,
-}: {
-  color: string;
-  position?: [number, number, number];
-  rotation?: [number, number, number];
-  scale?: number;
-}) {
-  return (
-    <group position={position} rotation={rotation} scale={scale}>
-      <RoundedBox args={[1.5, 2.1, 0.04]} radius={0.08} smoothness={4}>
-        <meshStandardMaterial color="#2a1708" metalness={0.4} roughness={0.4} />
-      </RoundedBox>
-      <mesh position={[0, 0.12, 0.03]}>
-        <planeGeometry args={[1.28, 1.3]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={0.3}
-        />
-      </mesh>
-      <mesh position={[0, -0.7, 0.03]}>
-        <planeGeometry args={[1.28, 0.45]} />
-        <meshStandardMaterial color="#4b2e15" />
-      </mesh>
-    </group>
-  );
-}
-
 function World() {
   const { viewport, camera } = useThree();
   const mascot = useRef<THREE.Group>(null!);
@@ -170,15 +135,9 @@ function World() {
   const tracker = useMemo(() => createSectionTracker(), []);
   const mix = useRef(1); // 1 = 2D mascot showing, 0 = 3D turtle showing (timed cross-fade)
   const scrollFx = useRef({ lastY: -1, speed: 0, s: 0 });
-  const stage = useRef<THREE.Group>(null!);
-  const hero = useRef<THREE.Group>(null!);
-  const fan = useRef<THREE.Group>(null!);
-  const ring = useRef<THREE.Mesh>(null!);
   const pointer = useRef({ x: 0, y: 0 });
 
   const wide = viewport.width > 7;
-  const sideX = wide ? viewport.width * 0.24 : 0;
-  const stageX = wide ? viewport.width * 0.1 : 0;
 
   // the 3D canvas does not receive pointer events, so track the cursor on the window
   useEffect(() => {
@@ -325,22 +284,6 @@ function World() {
     sf.depth = depthN;
     sf.fog = depthN * 0.4; // the deeper it is, the more it blends into the water
     swimTrail.current.trail = o.trail * a3d;
-
-    // showcase: hero card spins with scroll, platform ring turns
-    hero.current.rotation.y = Math.sin(t * 0.5) * 0.25 + p * 6;
-    hero.current.position.y = Math.sin(t * 1.2) * 0.06;
-    ring.current.rotation.z = t * 0.4;
-    stage.current.position.x = stageX;
-
-    // about: cards fan open as the section scrolls in
-    const open = smooth(p, 0.42, 0.6);
-    fan.current.position.x = sideX;
-    fan.current.children.forEach((c, i) => {
-      const k = i - 1; // -1, 0, 1
-      c.rotation.z = -k * 0.32 * open;
-      c.position.x = k * 1.35 * open;
-      c.position.y = Math.abs(k) * -0.18 * open + Math.sin(t + i) * 0.05;
-    });
   });
 
   return (
@@ -365,46 +308,6 @@ function World() {
         <group position={[0, -0.8, 1.4]}>
           <Trail pose={swimTrail} />
         </group>
-      </group>
-
-      <group ref={stage} position={[0, STAGE_Y, 0]}>
-        <group ref={hero}>
-          <Card color="#f89f0c" scale={1.25} />
-        </group>
-        <Card
-          color="#75582b"
-          position={[-1.9, 0, -0.8]}
-          rotation={[0, 0.5, 0.06]}
-          scale={1.05}
-        />
-        <Card
-          color="#75582b"
-          position={[1.9, 0, -0.8]}
-          rotation={[0, -0.5, -0.06]}
-          scale={1.05}
-        />
-        <mesh position={[0, -1.9, 0]}>
-          <cylinderGeometry args={[2.2, 2.4, 0.25, 48]} />
-          <meshStandardMaterial
-            color="#3a2410"
-            metalness={0.6}
-            roughness={0.35}
-          />
-        </mesh>
-        <mesh
-          ref={ring}
-          position={[0, -1.76, 0]}
-          rotation={[Math.PI / 2, 0, 0]}
-        >
-          <torusGeometry args={[2.25, 0.03, 8, 80]} />
-          <meshBasicMaterial color="#fbd61e" />
-        </mesh>
-      </group>
-
-      <group ref={fan} position={[0, FAN_Y, 0]}>
-        <Card color="#af5115" />
-        <Card color="#f89f0c" scale={1.15} position={[0, 0, 0.3]} />
-        <Card color="#23805a" />
       </group>
 
       <Sparkles

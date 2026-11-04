@@ -1,0 +1,497 @@
+/* =====================================================================
+   3D game box  (a real cuboid made of 6 faces)
+   --item = box width. LANDSCAPE box: height = 0.742 x width (620 x 460 art), depth = 0.17 x width
+   ===================================================================== */
+.persp {
+  perspective: calc(var(--item, 220px) * 4.8);
+  perspective-origin: 50% 40%;
+}
+
+.box {
+  --w: var(--item, 220px);
+  --h: calc(var(--w) * 0.742);
+  --d: calc(var(--w) * 0.17);
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  margin-inline: auto;
+  transform-style: preserve-3d;
+  user-select: none;
+}
+
+.face {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.faceImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-user-drag: none;
+}
+
+.front,
+.back {
+  top: 0;
+  left: 0;
+  width: var(--w);
+  height: var(--h);
+  border-radius: 4px;
+}
+.front {
+  transform: translateZ(calc(var(--d) / 2));
+}
+.front::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0) 38%,
+    rgba(0, 0, 0, 0.14) 100%
+  );
+  pointer-events: none;
+}
+.back {
+  transform: rotateY(180deg) translateZ(calc(var(--d) / 2));
+  background: var(--c1, #123);
+}
+
+/* left / right sides (spine) */
+.side {
+  top: 0;
+  left: calc((var(--w) - var(--d)) / 2);
+  width: var(--d);
+  height: var(--h);
+}
+.right {
+  transform: rotateY(90deg) translateZ(calc(var(--w) / 2));
+  background: linear-gradient(90deg, var(--c2, #345), var(--c1, #123));
+}
+.left {
+  transform: rotateY(-90deg) translateZ(calc(var(--w) / 2));
+  background: linear-gradient(270deg, var(--c2, #345), var(--c1, #123));
+}
+.spine {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  writing-mode: vertical-rl;
+  font-family: system-ui, sans-serif;
+  font-weight: 800;
+  font-size: calc(var(--d) * 0.4);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ac, #fff8dc);
+}
+.spineFlip {
+  transform: rotate(180deg);
+}
+
+/* top / bottom */
+.cap {
+  left: 0;
+  top: calc((var(--h) - var(--d)) / 2);
+  width: var(--w);
+  height: var(--d);
+}
+.top {
+  transform: rotateX(90deg) translateZ(calc(var(--h) / 2));
+  background: linear-gradient(180deg, var(--c2, #345), var(--c1, #123));
+}
+.bottom {
+  transform: rotateX(-90deg) translateZ(calc(var(--h) / 2));
+  background: #000;
+}
+
+/* =====================================================================
+   Carousel: ONE horizontal row, swipe / drag sideways, snaps to centre
+   ===================================================================== */
+.carousel {
+  --item: clamp(170px, 20vw, 270px);
+  --gap: clamp(0.75rem, 3vw, 2.5rem);
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden; /* nothing inside can widen the page */
+}
+
+.scroller {
+  position: relative;
+  display: flex;
+  flex-direction: row; /* never a column */
+  flex-wrap: nowrap; /* never wraps onto a second row */
+  column-gap: var(--gap);
+  width: 100%;
+  margin: 0;
+  padding: 2.2rem 0 3.2rem;
+  list-style: none;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: auto; /* smooth scrolling is done in JS */
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y; /* swipe sideways, page still scrolls vertically */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  user-select: none;
+  cursor: grab;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 14%,
+    #000 86%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 14%,
+    #000 86%,
+    transparent 100%
+  );
+}
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+.dragging {
+  scroll-snap-type: none;
+  cursor: grabbing;
+}
+
+/* lets the first / last box reach the centre */
+.spacer {
+  flex: 0 0 calc(50% - var(--item) / 2 - var(--gap));
+}
+
+.item {
+  position: relative;
+  flex: 0 0 var(--item);
+  width: var(--item);
+  height: calc(var(--item) * 0.742);
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+.itemLink {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  outline-offset: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+.itemLink:focus-visible {
+  outline: 2px solid currentColor;
+}
+
+/* opacity + filter live OUTSIDE the 3D chain (they would flatten it) */
+.dim {
+  width: 100%;
+  height: 100%;
+  opacity: var(--op, 1);
+  filter: brightness(var(--b, 1));
+}
+/* JS writes --s --ry --ty --op --b --sh on .item from the distance to the centre */
+.stage {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: translateY(var(--ty, 0px)) scale(var(--s, 1))
+    rotateY(var(--ry, -16deg));
+  will-change: transform;
+}
+.tilt {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--py, 0) * -8deg))
+    rotateY(calc(var(--px, 0) * 14deg));
+  transition: transform 0.15s ease-out;
+}
+.float {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+.item[data-active="true"] .float {
+  animation: bob 5s ease-in-out infinite;
+}
+@keyframes bob {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.ground {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--item) * -0.12);
+  width: calc(var(--item) * 1.05);
+  height: calc(var(--item) * 0.16);
+  transform: translateX(-50%) scale(var(--sh, 0.8));
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent);
+  opacity: var(--op, 1);
+  pointer-events: none;
+}
+
+.fadeUp {
+  animation: fadeUp 0.45s ease both;
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* =====================================================================
+   Box viewer (game page): drag to rotate
+   ===================================================================== */
+.viewer {
+  --item: clamp(220px, 32vw, 330px);
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 0 3.5rem;
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+}
+.viewer:active {
+  cursor: grabbing;
+}
+.spin {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.viewerShadow {
+  position: absolute;
+  left: 50%;
+  bottom: 1.2rem;
+  width: calc(var(--item) * 1.1);
+  height: calc(var(--item) * 0.16);
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent);
+  pointer-events: none;
+}
+
+/* =====================================================================
+   3D flip card. 1 card width = 1 container (cqw units scale all text)
+   ===================================================================== */
+.cardWrap {
+  container-type: inline-size;
+  perspective: 1400px;
+  width: 100%;
+  max-width: 270px;
+  margin-inline: auto;
+}
+.cardTilt {
+  position: relative;
+  aspect-ratio: 5 / 7;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--py, 0) * -9deg))
+    rotateY(calc(var(--px, 0) * 12deg));
+  transition: transform 0.15s ease-out;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cardInner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.cardWrap[data-flipped="true"] .cardInner {
+  transform: rotateY(180deg);
+}
+.cardFace {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 6cqw;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 1.6cqw 5cqw rgba(0, 0, 0, 0.5);
+}
+.cardFace::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at calc(50% + var(--px, 0) * 40%) calc(50% + var(--py, 0) * 40%),
+    rgba(255, 255, 255, 0.22),
+    transparent 55%
+  );
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+  z-index: 5;
+}
+.cardFront {
+  transform: translateZ(0.5px);
+  background: #000;
+}
+.cardBack {
+  transform: rotateY(180deg) translateZ(0.5px);
+}
+
+.cardArt {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-user-drag: none;
+}
+.cardFront::before {
+  content: "";
+  position: absolute;
+  inset: 2.6cqw;
+  border: 0.7cqw solid color-mix(in srgb, var(--ac, #fbd61e) 70%, transparent);
+  border-radius: 4cqw;
+  z-index: 2;
+  pointer-events: none;
+}
+.cardShade {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 55%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0));
+}
+.cost {
+  position: absolute;
+  top: 5.5cqw;
+  left: 5.5cqw;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 11cqw;
+  height: 11cqw;
+  border-radius: 50%;
+  font-size: 6.5cqw;
+  font-weight: 800;
+  color: #1a1205;
+  background: var(--ac, #fbd61e);
+  box-shadow: 0 0.8cqw 2cqw rgba(0, 0, 0, 0.4);
+}
+.cardMeta {
+  position: absolute;
+  left: 7cqw;
+  right: 7cqw;
+  bottom: 7cqw;
+  z-index: 3;
+  display: grid;
+  gap: 1.6cqw;
+  color: #fff8e1;
+}
+.cardType {
+  font-size: 3.3cqw;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ac, #fbd61e);
+}
+.cardName {
+  font-size: 8cqw;
+  font-weight: 800;
+  line-height: 1.05;
+}
+.cardEffect {
+  font-size: 4.2cqw;
+  line-height: 1.35;
+  opacity: 0.9;
+}
+
+/* back = one page of the rulebook */
+.rules {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3.6cqw;
+  padding: 8cqw 8cqw 7cqw;
+  color: #fff8e1;
+  background: linear-gradient(160deg, var(--c1, #123), var(--c2, #345));
+}
+.rules::before {
+  content: "";
+  position: absolute;
+  inset: 2.6cqw;
+  border: 0.7cqw solid color-mix(in srgb, var(--ac, #fbd61e) 60%, transparent);
+  border-radius: 4cqw;
+  pointer-events: none;
+}
+.kicker {
+  font-size: 3.4cqw;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--ac, #fbd61e);
+}
+.rulesTitle {
+  margin: 0;
+  font-size: 8.4cqw;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.rulesList {
+  display: grid;
+  gap: 3cqw;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 4.9cqw;
+  line-height: 1.38;
+}
+.rulesList li {
+  position: relative;
+  padding-left: 6.5cqw;
+}
+.rulesList li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.9cqw;
+  width: 2.8cqw;
+  height: 2.8cqw;
+  border-radius: 50%;
+  background: var(--ac, #fbd61e);
+}
+.rulesFoot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  font-size: 3.3cqw;
+  opacity: 0.75;
+}
+
+/* =====================================================================
+   Motion preferences
+   ===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .item[data-active="true"] .float,
+  .fadeUp {
+    animation: none;
+  }
+  .cardInner {
+    transition-duration: 0.01s;
+  }
+  .tilt,
+  .cardTilt {
+    transition: none;
+  }
+}

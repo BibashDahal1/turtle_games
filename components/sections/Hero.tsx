@@ -26,11 +26,11 @@ export default function Hero() {
           data-hero
           className={`${grad} mt-1 mb-4 text-[clamp(2rem,5vw,3.2rem)]`}
         >
-          Play. Collect. Explore.
+          Board & Card Game Studio
         </h2>
         <p data-hero className={lead}>
-          A creative game studio crafting immersive card and board games for
-          every kind of player.
+          Creating meaningful connections through play. Promoting family time
+          and social interaction.
         </p>
         <a data-hero href="#games" className={btnSolid}>
           Explore Our Game
