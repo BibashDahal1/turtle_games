@@ -2,6 +2,7 @@ import SceneMount from "@/components/SceneMount";
 import ScrollDriver from "@/components/ScrollDriver";
 import Hero from "@/components/sections/Hero";
 import TurtleGames from "@/components/sections/TurtleGames";
+import Turtle from "@/components/sections/Turtle";
 import {
   btnGhost,
   btnLight,
@@ -16,7 +17,7 @@ import {
 import Logo from "@/components/Logo";
 import WaterRipple from "@/components/effects/WaterRipple";
 
-const NAV = ["Games", "About", "Rules", "Blog", "Contact"];
+const NAV = ["Home", "Games", "About", "Contact"];
 
 const STEPS = [
   {
@@ -67,19 +68,15 @@ export default function Home() {
         <div className="relative z-10 px-4 sm:px-8 lg:px-16">
           {/* 2. OUR GAMES (own file: components/sections/TurtleGames.tsx) */}
           <TurtleGames />
-
           {/* ABOUT */}
-          <section id="about" className={`${sec} min-h-svh`}></section>
-
-          {/* HOW TO PLAY */}
-          <section
-            id="rules"
-            className={`${sec} min-h-svh gap-8 md:flex-row md:items-center md:justify-between`}
-          ></section>
+          <section id="about" className={`${sec} min-h-svh`}>
+            {" "}
+            <Turtle />
+          </section>
 
           {/* CTA */}
           <section
-            id="cta"
+            id="contact"
             className={`${sec} min-h-[70svh] items-center text-center`}
           >
             <h2
