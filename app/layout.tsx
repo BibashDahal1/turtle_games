@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { Suspense } from "react";
 import TurtleLoader from "@/components/TurtleLoader";
+import VisitorGate from "@/components/visitor/VisitorGate";
+import StoreProvider from "@/store/StoreProvider"; // adjust if StoreProvider lives elsewhere
 import "./globals.css";
 
 const font = Plus_Jakarta_Sans({
@@ -37,7 +40,12 @@ export default function RootLayout({
           <style>{`#turtle-loader{display:none}html,body{overflow:auto!important}`}</style>
         </noscript>
         <TurtleLoader />
-        {children}
+        {/* StoreProvider must sit inside Suspense (see its own comment). The gate decides what is shown. */}
+        <Suspense fallback={null}>
+          <StoreProvider>
+            <VisitorGate>{children}</VisitorGate>
+          </StoreProvider>
+        </Suspense>
       </body>
     </html>
   );

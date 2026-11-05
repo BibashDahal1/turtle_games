@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/classes";
 import Logo from "@/components/Logo";
 import WaterRipple from "@/components/effects/WaterRipple";
+import SignOutButton from "@/components/visitor/SignOutButton";
 
 const NAV = ["Home", "Games", "About", "Contact"];
 
@@ -33,9 +34,11 @@ const STEPS = [
   { n: 3, title: "Claim Victory", text: "Be the last one standing!" },
 ];
 
+export const instant = false;
+
 export default function Home() {
   return (
-    <>
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-page text-ink">
       <WaterRipple scope="window" quality={0.65} intensity={0.7} />
       <SceneMount />
       <ScrollDriver />
@@ -55,9 +58,12 @@ export default function Home() {
             </a>
           ))}
         </nav>
-        <a href="#cta" className={`${btnSolid} !px-5 !py-2 !text-xs`}>
-          Get the Game
-        </a>
+        <div className="flex items-center gap-3">
+          <SignOutButton className={`${btnGhost} !px-5 !py-2 !text-xs`} />
+          <a href="#contact" className={`${btnSolid} !px-5 !py-2 !text-xs`}>
+            Get the Game
+          </a>
+        </div>
       </header>
 
       <main className="relative">
@@ -115,6 +121,6 @@ export default function Home() {
         </nav>
         <small>© 2026 Turtle Games. All rights reserved.</small>
       </footer>
-    </>
+    </div>
   );
 }
