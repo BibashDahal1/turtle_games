@@ -2,19 +2,13 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Fredoka, Lilita_One } from "next/font/google";
-import type { Game } from "@/lib/games";
+import type { Game, GameRule } from "@/lib/games";
 import { eyebrow, grad, sec } from "@/components/ui/classes";
 
 const display = Lilita_One({ subsets: ["latin"], weight: "400" });
 const body = Fredoka({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
-type Rule = {
-  number: number;
-  title?: string | null;
-  text: string;
-  image?: string | null;
-  imageCaption?: string | null;
-};
+type Rule = GameRule;
 
 /* Cartoon-map palette (the map is a physical object, so these are fixed
    colours rather than theme tokens). */
@@ -99,14 +93,18 @@ export default function RulesShowcase({ game }: { game: Game }) {
     return () => io.disconnect();
   }, []);
 
-  const source = (game as unknown as { rules?: Rule[] | null }).rules;
-  const rules: Rule[] = [...(source ?? [])].sort((a, b) => a.number - b.number);
+  const rules: Rule[] = [...(game.rules ?? [])].sort(
+    (a, b) => a.number - b.number,
+  );
   if (rules.length === 0) return null;
 
   const columns = splitIntoColumns(rules);
   const count = columns.length;
   const revealStep = Math.min(REVEAL_STEP_MS, REVEAL_MAX_MS / rules.length);
-  let readingIndex = 0; // left panel top -> bottom, then next panel...
+  // Reading-order position of each panel's first rule (left panel top -> bottom, then the next).
+  const offsets = columns.map((_, i) =>
+    columns.slice(0, i).reduce((sum, c) => sum + c.length, 0),
+  );
 
   // Half the vertical shift a skewed panel makes between its two edges.
   // Used as padding so the straight text always sits inside the slanted paper.
@@ -124,7 +122,7 @@ export default function RulesShowcase({ game }: { game: Game }) {
 
         <div
           className="[container-type:inline-size]"
-          style={{ ["--fold" as string]: fold } as CSSProperties}
+          style={{ "--fold": fold } as CSSProperties}
         >
           <div
             className={`grid grid-cols-1 md:py-[var(--fold)] ${GRID_COLS[count]} ${body.className}`}
@@ -173,7 +171,7 @@ export default function RulesShowcase({ game }: { game: Game }) {
 
                   <ol className="relative z-10 flex flex-col px-6 py-7 sm:px-8 md:py-[calc(var(--fold)_+_2rem)]">
                     {column.map((rule, rowIndex) => {
-                      const order = readingIndex++;
+                      const order = offsets[colIndex] + rowIndex;
                       const isLastInColumn = rowIndex === column.length - 1;
 
                       return (

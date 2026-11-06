@@ -37,6 +37,17 @@ export interface GameCardInfo {
   quoteEn?: string;
 }
 
+/** One numbered step of the "How to play" section. */
+export interface GameRule {
+  /** order of the rule: 1, 2, 3... */
+  number: number;
+  title?: string | null;
+  text: string;
+  /** optional picture for the rule (Cloudinary URL) */
+  image?: string | null;
+  imageCaption?: string | null;
+}
+
 export interface Game {
   slug: string;
   name: string;
@@ -62,4 +73,7 @@ export interface Game {
   price?: number;
   /** ISO currency code of the price, e.g. "NPR" */
   currency?: string;
+
+  /** the steps shown in the "Rules" tab. Left out when the game has no rules */
+  rules?: GameRule[];
 }
