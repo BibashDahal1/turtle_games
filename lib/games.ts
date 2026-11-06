@@ -58,4 +58,8 @@ export interface Game {
   cardBack?: string;
   /** the cards shown in the "Meet the cards" section of the game page */
   cards?: GameCardInfo[];
+  /** price of one box. Both price and currency are left out by the API when the game cannot be ordered */
+  price?: number;
+  /** ISO currency code of the price, e.g. "NPR" */
+  currency?: string;
 }

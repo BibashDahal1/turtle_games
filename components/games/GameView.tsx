@@ -3,7 +3,6 @@
 import { notFound } from "next/navigation";
 import { useEffect } from "react";
 import BoxViewer from "@/components/games/BoxViewer";
-import CardShowcase from "@/components/games/CardShowcase";
 import HomeLink from "@/components/ui/HomeLink";
 import {
   btnGhost,
@@ -14,6 +13,7 @@ import {
   title,
 } from "@/components/ui/classes";
 import { useGame } from "@/hooks/useGames";
+import GameTabs from "@/components/games/GameTabs";
 
 /**
  * The game page content. The game comes from the Redux store, which is filled from the
@@ -36,13 +36,15 @@ export default function GameView({ slug }: { slug: string }) {
   if (isLoading) return <GameFallback />;
   if (isError) return <GameError message={error} onRetry={retry} />;
   if (missing || !game) notFound();
+  console.log("RULES AT GAMEVIEW:", game.rules, Object.keys(game));
 
   return (
     <>
       <section
         className={`${sec} min-h-svh gap-10 py-28 md:flex-row md:items-center md:justify-between`}
       >
-        <div className="max-w-[560px]">
+        {/* text column: half the width on tablets and desktops, so the 3D box gets the other half */}
+        <div className="max-w-[560px] md:w-1/2">
           <HomeLink
             hash="games"
             className="mb-6 inline-block text-sm font-medium text-muted hover:text-ink"
@@ -83,7 +85,7 @@ export default function GameView({ slug }: { slug: string }) {
       </section>
 
       {/* the cards inside the box: flip them to read what they do (renders nothing if the game has no cards) */}
-      <CardShowcase game={game} />
+      <GameTabs game={game} />
     </>
   );
 }
@@ -95,7 +97,7 @@ export function GameFallback() {
       aria-busy="true"
       className={`${sec} min-h-svh gap-10 py-28 md:flex-row md:items-center md:justify-between`}
     >
-      <div className="w-full max-w-[560px] animate-pulse" aria-hidden>
+      <div className="w-full max-w-[560px] animate-pulse md:w-1/2" aria-hidden>
         <div className="mb-6 h-4 w-40 rounded bg-ink/10" />
         <div className="mb-4 h-3 w-28 rounded bg-ink/10" />
         <div className="mb-4 h-12 w-3/4 rounded bg-ink/10" />
@@ -103,7 +105,7 @@ export function GameFallback() {
         <div className="h-12 w-44 rounded-full bg-ink/10" />
       </div>
       <div
-        className="h-80 w-full max-w-[340px] animate-pulse rounded-2xl bg-ink/5 md:flex-1"
+        className="h-80 w-full max-w-[340px] animate-pulse rounded-2xl bg-ink/5 md:w-1/2 md:max-w-none md:flex-none"
         aria-hidden
       />
     </section>

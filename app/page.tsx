@@ -16,7 +16,10 @@ import {
 } from "@/components/ui/classes";
 import Logo from "@/components/Logo";
 import WaterRipple from "@/components/effects/WaterRipple";
+import VisitorGate from "@/components/visitor/VisitorGate";
 import SignOutButton from "@/components/visitor/SignOutButton";
+import CartButton from "@/components/shop/CartButton";
+import ShopRoot from "@/components/shop/ShopRoot";
 
 const NAV = ["Home", "Games", "About", "Contact"];
 
@@ -34,14 +37,14 @@ const STEPS = [
   { n: 3, title: "Claim Victory", text: "Be the last one standing!" },
 ];
 
-export const instant = false;
-
 export default function Home() {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-page text-ink">
+    // The gate lives in the PAGE (not the layout) so the layout always renders {children}.
+    <VisitorGate>
       <WaterRipple scope="window" quality={0.65} intensity={0.7} />
       <SceneMount />
       <ScrollDriver />
+      <ShopRoot />
 
       <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-4 bg-linear-to-b from-page/80 to-transparent px-4 py-5 md:px-12">
         <a
@@ -58,9 +61,12 @@ export default function Home() {
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
-          <SignOutButton className={`${btnGhost} !px-5 !py-2 !text-xs`} />
-          <a href="#contact" className={`${btnSolid} !px-5 !py-2 !text-xs`}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <CartButton className={`${btnGhost} !px-4 !py-2 !text-xs`} />
+          <SignOutButton
+            className={`${btnGhost} hidden !px-4 !py-2 !text-xs sm:inline-flex`}
+          />
+          <a href="#cta" className={`${btnSolid} !px-5 !py-2 !text-xs`}>
             Get the Game
           </a>
         </div>
@@ -121,6 +127,6 @@ export default function Home() {
         </nav>
         <small>© 2026 Turtle Games. All rights reserved.</small>
       </footer>
-    </div>
+    </VisitorGate>
   );
 }

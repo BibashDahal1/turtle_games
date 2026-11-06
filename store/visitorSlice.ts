@@ -4,16 +4,24 @@ import { ApiError, apiGet, apiPost, getErrorMessage } from "@/lib/api";
 
 /**
  * Who is signed in. The sign-in token itself is NOT here: it lives in an HttpOnly cookie that
- * JavaScript cannot read. Redux only knows whether the browser is signed in and the visitor's name.
+ * JavaScript cannot read. Redux only knows whether the browser is signed in and the visitor's saved
+ * details (used to pre-fill the order form).
  */
 
 export type VisitorStatus = "checking" | "signedOut" | "signedIn" | "error";
 
-export interface VisitorInfo {
+export interface VisitorProfile {
   firstName: string;
   middleName: string;
   lastName: string;
+  email: string;
+  phone: string;
+  country: string;
+  city: string;
 }
+
+/** Kept so older imports keep working. */
+export type VisitorInfo = VisitorProfile;
 
 export interface RegisterInput {
   firstName: string;
@@ -42,7 +50,7 @@ interface RestoreFailure {
 
 export interface VisitorState {
   status: VisitorStatus;
-  visitor: VisitorInfo | null;
+  visitor: VisitorProfile | null;
   restoring: boolean;
   error: string | null;
 }
@@ -56,24 +64,35 @@ const initialState: VisitorState = {
 
 type WithVisitor = { visitor: VisitorState };
 
+type MeResponse = Partial<VisitorProfile> & {
+  id: number;
+  firstName: string;
+  lastName: string;
+};
+
+async function fetchProfile(signal?: AbortSignal): Promise<VisitorProfile> {
+  const me = await apiGet<MeResponse>("/visitors/me/", signal);
+  return {
+    firstName: me.firstName,
+    middleName: me.middleName ?? "",
+    lastName: me.lastName,
+    email: me.email ?? "",
+    phone: me.phone ?? "",
+    country: me.country ?? "",
+    city: me.city ?? "",
+  };
+}
+
 /** Asks the server who is signed in (the browser sends its cookie automatically). */
 export const restoreSession = createAsyncThunk<
-  VisitorInfo,
+  VisitorProfile,
   void,
   { rejectValue: RestoreFailure }
 >(
   "visitor/restoreSession",
   async (_, { rejectWithValue, signal }) => {
     try {
-      const me = await apiGet<VisitorInfo & { id: number }>(
-        "/visitors/me/",
-        signal,
-      );
-      return {
-        firstName: me.firstName,
-        middleName: me.middleName,
-        lastName: me.lastName,
-      };
+      return await fetchProfile(signal);
     } catch (error) {
       return rejectWithValue({
         unauthorized:
@@ -118,20 +137,38 @@ function toRegisterFailure(error: unknown): RegisterFailure {
   return { message: getErrorMessage(error), fieldErrors: {} };
 }
 
-/** Sends the form. On success the server sets the HttpOnly cookie and the visitor is signed in. */
+/**
+ * Sends the form. On success the server sets the HttpOnly cookie, then we load the visitor's SAVED
+ * details from /me/ (for a returning visitor these can differ from what was just typed).
+ */
 export const registerVisitor = createAsyncThunk<
-  VisitorInfo,
+  VisitorProfile,
   RegisterInput,
   { rejectValue: RegisterFailure }
 >("visitor/register", async (input, { rejectWithValue }) => {
+  let echoed: Pick<VisitorProfile, "firstName" | "middleName" | "lastName">;
+
   try {
-    const response = await apiPost<{ visitor: VisitorInfo }>(
+    const response = await apiPost<{ visitor: typeof echoed }>(
       "/visitors/register/",
       input,
     );
-    return response.visitor;
+    echoed = response.visitor;
   } catch (error) {
     return rejectWithValue(toRegisterFailure(error));
+  }
+
+  try {
+    return await fetchProfile();
+  } catch {
+    // The visitor IS registered; only the profile lookup failed. Fall back to what was typed.
+    return {
+      ...echoed,
+      email: input.email.trim().toLowerCase(),
+      phone: input.phone,
+      country: input.country,
+      city: input.city,
+    };
   }
 });
 

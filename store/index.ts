@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 
+import cartReducer from "./cartSlice";
 import gamesReducer from "./gamesSlice";
 import visitorReducer from "./visitorSlice";
 
@@ -8,6 +9,7 @@ export const makeStore = () =>
     reducer: {
       games: gamesReducer,
       visitor: visitorReducer,
+      cart: cartReducer,
     },
   });
 

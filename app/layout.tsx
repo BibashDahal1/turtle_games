@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Suspense } from "react";
 import TurtleLoader from "@/components/TurtleLoader";
-import VisitorGate from "@/components/visitor/VisitorGate";
 import StoreProvider from "@/store/StoreProvider"; // adjust if StoreProvider lives elsewhere
 import "./globals.css";
 
@@ -40,11 +39,9 @@ export default function RootLayout({
           <style>{`#turtle-loader{display:none}html,body{overflow:auto!important}`}</style>
         </noscript>
         <TurtleLoader />
-        {/* StoreProvider must sit inside Suspense (see its own comment). The gate decides what is shown. */}
+        {/* The layout ALWAYS renders {children}. The visitor gate lives inside each page (see page.tsx). */}
         <Suspense fallback={null}>
-          <StoreProvider>
-            <VisitorGate>{children}</VisitorGate>
-          </StoreProvider>
+          <StoreProvider>{children}</StoreProvider>
         </Suspense>
       </body>
     </html>

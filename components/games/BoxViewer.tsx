@@ -20,6 +20,10 @@ const BOB_AMP = 0.025;
 const VIEW_H = 2.05;
 const TARGET_Y = 0.42;
 
+/** tablets and desktops only: how much wider than the platform the view must be (1 = touching the edges) */
+const FIT_MARGIN = 1.2;
+const LOOK_AT = new THREE.Vector3(0, TARGET_Y, 0);
+
 const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 const rad = THREE.MathUtils.degToRad;
 
@@ -62,9 +66,24 @@ export default function BoxViewer({ game }: { game: Game }) {
       idleAt: performance.now(),
     };
 
+    /** md and up: zoom the camera out just enough that the whole platform fits the canvas width */
+    const fitPlatformWidth = () => {
+      if (!(camera instanceof THREE.PerspectiveCamera)) return;
+      camera.zoom = 1;
+      if (window.matchMedia("(min-width: 768px)").matches) {
+        const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
+        const dist = camera.position.distanceTo(LOOK_AT);
+        const halfW = Math.tan(rad(camera.fov / 2)) * dist * aspect;
+        camera.zoom = clamp(halfW / (PLATFORM_RADIUS * FIT_MARGIN), 0.25, 1);
+      }
+      camera.updateProjectionMatrix();
+    };
+
     const resize = () => {
       const { h } = stage.resize();
-      if (h) frameCamera(camera, VIEW_H, TARGET_Y);
+      if (!h) return;
+      frameCamera(camera, VIEW_H, TARGET_Y);
+      fitPlatformWidth();
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -173,7 +192,7 @@ export default function BoxViewer({ game }: { game: Game }) {
   }, [game]);
 
   return (
-    <div className="flex flex-col items-center md:flex-1">
+    <div className="flex flex-col items-center md:w-1/2 md:flex-none">
       <canvas
         ref={canvasRef}
         role="img"
