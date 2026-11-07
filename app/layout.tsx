@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Suspense } from "react";
 import TurtleLoader from "@/components/TurtleLoader";
-import StoreProvider from "@/store/StoreProvider"; // adjust if StoreProvider lives elsewhere
+import TurtleModelPreloader from "@/components/TurtleModelPreloader";
+import StoreProvider from "@/store/StoreProvider";
 import "./globals.css";
 
 const font = Plus_Jakarta_Sans({
@@ -22,7 +23,6 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-// Page scroll is locked while the loader is on screen (pure CSS, no hydration mismatch).
 const lock = "has-[#turtle-loader:not(.done)]:overflow-hidden";
 
 export default function RootLayout({
@@ -32,14 +32,28 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`scroll-smooth ${lock}`}>
+      <head>
+        <link
+          rel="preload"
+          href="/turtle/turtle_rigged.glb"
+          as="fetch"
+          type="model/gltf-binary"
+          crossOrigin="anonymous"
+        />
+      </head>
+
       <body
         className={`${font.className} ${lock} bg-page bg-[radial-gradient(120%_80%_at_70%_0%,var(--page-from)_0%,var(--page-to)_70%)] bg-fixed text-ink antialiased`}
       >
         <noscript>
           <style>{`#turtle-loader{display:none}html,body{overflow:auto!important}`}</style>
         </noscript>
+
         <TurtleLoader />
-        {/* The layout ALWAYS renders {children}. The visitor gate lives inside each page (see page.tsx). */}
+
+        {/* Preload the shared 3D turtle model globally */}
+        <TurtleModelPreloader />
+
         <Suspense fallback={null}>
           <StoreProvider>{children}</StoreProvider>
         </Suspense>
