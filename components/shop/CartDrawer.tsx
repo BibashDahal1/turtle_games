@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { btnGhost, btnSolid } from "@/components/ui/classes";
 import { formatMoney } from "@/lib/money";
@@ -13,85 +14,93 @@ import {
 import {
   MAX_QUANTITY_PER_GAME,
   closeCart,
-  dismissOrder,
+  leaveSavedView,
+  loadServerCart,
   removeFromCart,
+  selectCartDetails,
   selectCartItems,
   selectCartLines,
   selectCartOpen,
+  selectCartSaveError,
+  selectCartServerStatus,
   selectCartTotal,
-  selectLastContact,
-  selectLastOrder,
+  selectShowSaved,
+  selectUnavailableItems,
   setQuantity,
 } from "@/store/cartSlice";
-import type { OrderConfirmation } from "@/store/cartSlice";
+import type { CartDetails } from "@/store/cartSlice";
 
-import OrderForm from "./OrderForm";
+import CartDetailsForm from "./CartDetailsForm";
 
 type Step = "cart" | "details";
 
-function Confirmation({
-  order,
-  contact,
-  onClose,
+const WAIT_TEXT =
+  "Please wait for our call or email to confirm your cart and arrange payment and delivery.";
+
+function Unavailable({
+  items,
+  onRemove,
 }: {
-  order: OrderConfirmation;
-  contact: { email: string; phone: string } | null;
-  onClose: () => void;
+  items: { slug: string; name: string }[];
+  onRemove: (slug: string) => void;
 }) {
+  if (items.length === 0) return null;
   return (
-    <div>
-      <h2 className="mb-2 text-xl font-bold">Order received</h2>
-      <p className="text-sm text-ink/85">
-        Your reference is{" "}
-        <strong className="font-mono text-base tracking-wide">
-          {order.reference}
-        </strong>
-        . Please keep it.
+    <div className="my-4 rounded-xl border border-accent/30 p-3 text-xs">
+      <p className="mb-2 font-semibold">
+        No price available right now (left out of your total):
       </p>
-
-      <div
-        role="status"
-        className="mb-5 mt-4 rounded-xl border border-accent/40 bg-accent/10 p-4 text-sm"
-      >
-        <p className="mb-1 font-semibold">Your order is not confirmed yet.</p>
-        <p className="text-ink/85">
-          Please wait for our call or email to confirm your order and arrange
-          payment and delivery.
-          {contact ? (
-            <>
-              {" "}
-              We will contact you on <strong>{contact.phone}</strong> or at{" "}
-              <strong>{contact.email}</strong>.
-            </>
-          ) : null}{" "}
-          Keep your phone nearby and check your email, including the spam
-          folder.
-        </p>
-      </div>
-
-      <ul className="mb-4 divide-y divide-accent/20 text-sm">
-        {order.items.map((item) => (
+      <ul className="space-y-1">
+        {items.map((item) => (
           <li
-            key={item.name}
-            className="flex items-start justify-between gap-3 py-2"
+            key={item.slug}
+            className="flex items-center justify-between gap-3"
           >
-            <span>
-              {item.name} × {item.quantity}
-            </span>
-            <span className="shrink-0">
-              {formatMoney(item.lineTotal, order.currency)}
-            </span>
+            <span>{item.name}</span>
+            <button
+              type="button"
+              onClick={() => onRemove(item.slug)}
+              className="underline underline-offset-4"
+            >
+              Remove
+            </button>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
 
-      <p className="mb-6 flex justify-between text-base font-bold">
-        <span>Total</span>
-        <span>{formatMoney(order.total, order.currency)}</span>
+function DetailsSummary({
+  details,
+  onEdit,
+}: {
+  details: CartDetails;
+  onEdit: () => void;
+}) {
+  const name = [details.firstName, details.middleName, details.lastName]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <div
+      role="status"
+      className="mt-5 rounded-xl border border-accent/40 bg-accent/10 p-4 text-sm"
+    >
+      <p className="mb-1 font-semibold">Your details are with us.</p>
+      <p className="mb-3 text-ink/85">{WAIT_TEXT}</p>
+      <p className="text-xs text-ink/85">
+        {name}
+        <br />
+        {details.phone} · {details.email}
+        <br />
+        {details.address}, {details.city}, {details.country}
       </p>
-
-      <button type="button" onClick={onClose} className={btnSolid}>
-        Close
+      <button
+        type="button"
+        onClick={onEdit}
+        className="mt-3 text-xs underline underline-offset-4"
+      >
+        Edit details
       </button>
     </div>
   );
@@ -102,23 +111,28 @@ export default function CartDrawer() {
   const open = useAppSelector(selectCartOpen);
   const lines = useAppSelector(selectCartLines);
   const total = useAppSelector(selectCartTotal);
-  const lastOrder = useAppSelector(selectLastOrder);
-  const lastContact = useAppSelector(selectLastContact);
+  const details = useAppSelector(selectCartDetails);
+  const showSaved = useAppSelector(selectShowSaved);
   const items = useAppSelector(selectCartItems);
   const gamesStatus = useAppSelector(selectGamesStatus);
   const gamesError = useAppSelector(selectGamesError);
+  const unavailable = useAppSelector(selectUnavailableItems);
+  const serverStatus = useAppSelector(selectCartServerStatus);
+  const saveError = useAppSelector(selectCartSaveError);
+  const [step, setStep] = useState<Step>("cart");
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Items are in the cart but their game details (name, price) are not available yet.
   const waitingForGames = items.length > 0 && lines.length === 0;
   const loadingDetails =
-    waitingForGames && (gamesStatus === "idle" || gamesStatus === "loading");
+    (waitingForGames &&
+      (gamesStatus === "idle" || gamesStatus === "loading")) ||
+    (items.length === 0 &&
+      (serverStatus === "idle" || serverStatus === "loading"));
   const detailsFailed = waitingForGames && gamesStatus === "failed";
-  const [step, setStep] = useState<Step>("cart");
-  const panelRef = useRef<HTMLDivElement>(null);
 
   const close = useCallback(() => {
     dispatch(closeCart());
-    dispatch(dismissOrder());
     setStep("cart");
   }, [dispatch]);
 
@@ -144,17 +158,20 @@ export default function CartDrawer() {
     };
   }, [open, close]);
 
-  // Opening the cart makes sure the games (and so the prices) are loaded. Does nothing if they are.
+  // Opening the cart refreshes it from the server and makes sure the games (prices) are loaded.
   useEffect(() => {
-    if (open) void dispatch(fetchGames());
+    if (open) {
+      void dispatch(fetchGames());
+      void dispatch(loadServerCart({ force: true }));
+    }
   }, [open, dispatch]);
 
   if (!open) return null;
 
-  // If the cart empties while on the details step (for example a game was withdrawn), go back.
+  // If the cart empties while on the details step, go back.
   const activeStep: Step = lines.length === 0 ? "cart" : step;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[70] flex justify-end bg-black/25"
       onMouseDown={(event) => {
@@ -167,7 +184,7 @@ export default function CartDrawer() {
         aria-modal="true"
         aria-label="Shopping cart"
         tabIndex={-1}
-        className="h-full w-full max-w-lg overflow-y-auto border-l border-accent/30 bg-page/45 p-5 text-ink shadow-2xl outline-none backdrop-blur-2xl backdrop-saturate-150 sm:p-7"
+        className="h-full w-full max-w-lg overflow-y-auto border-l border-accent/30 bg-page/45 p-5 text-ink shadow-2xl outline-none backdrop-blur-2xl backdrop-saturate-150 transform-gpu sm:p-7"
       >
         <div className="mb-5 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
@@ -183,14 +200,81 @@ export default function CartDrawer() {
           </button>
         </div>
 
-        {lastOrder ? (
-          <Confirmation
-            order={lastOrder}
-            contact={lastContact}
-            onClose={close}
-          />
+        {serverStatus === "failed" && (
+          <p role="status" className="mb-4 text-xs text-muted">
+            Your saved cart could not be loaded.{" "}
+            <button
+              type="button"
+              onClick={() => void dispatch(loadServerCart())}
+              className="underline underline-offset-4"
+            >
+              Try again
+            </button>
+          </p>
+        )}
+
+        {saveError && serverStatus !== "failed" && (
+          <p role="status" className="mb-4 text-xs text-muted">
+            That change could not be saved to your account ({saveError}), so it
+            was undone. Please try again.
+          </p>
+        )}
+
+        {showSaved && details ? (
+          // Right after saving the details
+          <div>
+            <h2 className="mb-2 text-xl font-bold">Details saved</h2>
+            <div
+              role="status"
+              className="mb-5 rounded-xl border border-accent/40 bg-accent/10 p-4 text-sm"
+            >
+              <p className="mb-1 font-semibold">Your cart is with us.</p>
+              <p className="text-ink/85">
+                {WAIT_TEXT} We will contact you on{" "}
+                <strong>{details.phone}</strong> or at{" "}
+                <strong>{details.email}</strong>. Keep your phone nearby and
+                check your email, including the spam folder.
+              </p>
+            </div>
+
+            <ul className="mb-4 divide-y divide-accent/20 text-sm">
+              {lines.map((line) => (
+                <li
+                  key={line.game.slug}
+                  className="flex items-start justify-between gap-3 py-2"
+                >
+                  <span>
+                    {line.game.name} × {line.quantity}
+                  </span>
+                  <span className="shrink-0">
+                    {formatMoney(line.lineTotal, line.game.currency)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mb-6 flex justify-between text-base font-bold">
+              <span>Total</span>
+              <span>{formatMoney(total.amount, total.currency)}</span>
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  dispatch(leaveSavedView());
+                  setStep("details");
+                }}
+                className={btnGhost}
+              >
+                Edit details
+              </button>
+              <button type="button" onClick={close} className={btnSolid}>
+                Close
+              </button>
+            </div>
+          </div>
         ) : activeStep === "details" ? (
-          <OrderForm onBack={() => setStep("cart")} />
+          <CartDetailsForm onBack={() => setStep("cart")} />
         ) : loadingDetails ? (
           <p role="status" className="text-sm text-ink/85">
             Loading your cart…
@@ -210,8 +294,20 @@ export default function CartDrawer() {
           </div>
         ) : lines.length === 0 ? (
           <div>
-            <p className="mb-5 text-sm text-ink/85">Your cart is empty.</p>
-            <button type="button" onClick={close} className={btnGhost}>
+            <p className="mb-2 text-sm text-ink/85">
+              {unavailable.length > 0
+                ? "None of the games in your cart have a price right now."
+                : "Your cart is empty."}
+            </p>
+            <Unavailable
+              items={unavailable}
+              onRemove={(slug) => void dispatch(removeFromCart(slug))}
+            />
+            <button
+              type="button"
+              onClick={close}
+              className={`${btnGhost} mt-3`}
+            >
               Keep browsing
             </button>
           </div>
@@ -239,7 +335,7 @@ export default function CartDrawer() {
                         aria-label={`One less ${line.game.name}`}
                         disabled={line.quantity <= 1}
                         onClick={() =>
-                          dispatch(
+                          void dispatch(
                             setQuantity({
                               slug: line.game.slug,
                               quantity: line.quantity - 1,
@@ -261,7 +357,7 @@ export default function CartDrawer() {
                         aria-label={`One more ${line.game.name}`}
                         disabled={line.quantity >= MAX_QUANTITY_PER_GAME}
                         onClick={() =>
-                          dispatch(
+                          void dispatch(
                             setQuantity({
                               slug: line.game.slug,
                               quantity: line.quantity + 1,
@@ -276,7 +372,9 @@ export default function CartDrawer() {
 
                     <button
                       type="button"
-                      onClick={() => dispatch(removeFromCart(line.game.slug))}
+                      onClick={() =>
+                        void dispatch(removeFromCart(line.game.slug))
+                      }
                       className="text-xs text-muted underline underline-offset-4 hover:text-ink"
                     >
                       Remove
@@ -286,26 +384,38 @@ export default function CartDrawer() {
               ))}
             </ul>
 
+            <Unavailable
+              items={unavailable}
+              onRemove={(slug) => void dispatch(removeFromCart(slug))}
+            />
+
             <p className="mt-2 flex justify-between border-t border-accent/30 pt-4 text-base font-bold">
               <span>Total</span>
               <span>{formatMoney(total.amount, total.currency)}</span>
             </p>
             <p className="mt-1 text-xs text-muted">
-              No payment is taken here. After you order, please wait for our
-              call or email to confirm your order and arrange payment and
-              delivery.
+              No payment is taken here. We contact you by phone or email to
+              confirm your cart and arrange payment and delivery.
             </p>
 
-            <button
-              type="button"
-              onClick={() => setStep("details")}
-              className={`${btnSolid} mt-6 w-full`}
-            >
-              Continue to delivery details
-            </button>
+            {details ? (
+              <DetailsSummary
+                details={details}
+                onEdit={() => setStep("details")}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setStep("details")}
+                className={`${btnSolid} mt-6 w-full`}
+              >
+                Add delivery details so we can contact you
+              </button>
+            )}
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

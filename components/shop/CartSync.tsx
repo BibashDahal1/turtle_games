@@ -2,56 +2,23 @@
 
 import { useEffect } from "react";
 
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import {
-  fetchGames,
-  selectAllGames,
-  selectGamesStatus,
-} from "@/store/gamesSlice";
-import {
-  hydrateCart,
-  loadCart,
-  pruneCart,
-  saveCart,
-  selectCartHydrated,
-  selectCartItems,
-} from "@/store/cartSlice";
+import { useAppDispatch } from "@/store/hooks";
+import { fetchGames } from "@/store/gamesSlice";
+import { loadServerCart } from "@/store/cartSlice";
 
 /**
- * Keeps the cart in step with the browser and the games list. Renders nothing.
- * - loads the saved cart once,
- * - makes sure the games (and so the prices) are loaded,
- * - saves the cart whenever it changes,
- * - drops games that can no longer be ordered.
+ * Renders nothing. Wherever the cart is used it makes sure that
+ *  - the games (and so the prices) are loaded, and
+ *  - the visitor's saved cart is loaded from the server.
+ * Saving the cart happens in the store (see store/index.ts). Both calls do nothing when not needed.
  */
 export default function CartSync() {
   const dispatch = useAppDispatch();
-  const items = useAppSelector(selectCartItems);
-  const hydrated = useAppSelector(selectCartHydrated);
-  const games = useAppSelector(selectAllGames);
-  const gamesStatus = useAppSelector(selectGamesStatus);
 
   useEffect(() => {
-    if (!hydrated) dispatch(hydrateCart(loadCart()));
-  }, [dispatch, hydrated]);
-
-  useEffect(() => {
-    // Does nothing if the games are already loading or loaded.
     void dispatch(fetchGames());
+    void dispatch(loadServerCart());
   }, [dispatch]);
-
-  useEffect(() => {
-    if (hydrated) saveCart(items);
-  }, [hydrated, items]);
-
-  useEffect(() => {
-    if (!hydrated || gamesStatus !== "succeeded") return;
-    dispatch(
-      pruneCart(
-        games.filter((game) => game.price != null).map((game) => game.slug),
-      ),
-    );
-  }, [dispatch, hydrated, gamesStatus, games]);
 
   return null;
 }

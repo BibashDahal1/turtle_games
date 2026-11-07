@@ -1,5 +1,6 @@
-// Always same-origin: Next.js forwards /api/* to Django (see next.config.ts).
-const BASE_URL = "/api";
+// Same-origin by default: requests go to this site's /api, which next.config.ts forwards to Django.
+const RAW_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+const BASE_URL = RAW_BASE.replace(/\/+$/, "");
 
 export class ApiError extends Error {
   status: number;
@@ -29,11 +30,17 @@ function messageFromBody(data: unknown, status: number): string {
   return `Request failed (${status})`;
 }
 
+interface RequestOptions {
+  signal?: AbortSignal;
+  /** Lets the request finish even if the page is closing or reloading. */
+  keepalive?: boolean;
+}
+
 async function request<T>(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   body?: unknown,
-  signal?: AbortSignal,
+  options: RequestOptions = {},
 ): Promise<T> {
   let response: Response;
 
@@ -48,7 +55,8 @@ async function request<T>(
       // The browser attaches the HttpOnly sign-in cookie by itself; this code never sees the token.
       credentials: "same-origin",
       cache: "no-store",
-      signal,
+      signal: options.signal,
+      keepalive: options.keepalive,
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError")
@@ -79,7 +87,7 @@ async function request<T>(
  * `path` must start with "/" and keep Django's trailing slash, e.g. "/games/".
  */
 export function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
-  return request<T>("GET", path, undefined, signal);
+  return request<T>("GET", path, undefined, { signal });
 }
 
 export function apiPost<T>(
@@ -87,7 +95,30 @@ export function apiPost<T>(
   body?: unknown,
   signal?: AbortSignal,
 ): Promise<T> {
-  return request<T>("POST", path, body ?? {}, signal);
+  return request<T>("POST", path, body ?? {}, { signal });
+}
+
+export function apiPut<T>(
+  path: string,
+  body: unknown,
+  options?: RequestOptions,
+): Promise<T> {
+  return request<T>("PUT", path, body, options);
+}
+
+export function apiPatch<T>(
+  path: string,
+  body: unknown,
+  options?: RequestOptions,
+): Promise<T> {
+  return request<T>("PATCH", path, body, options);
+}
+
+export function apiDelete<T>(
+  path: string,
+  options?: RequestOptions,
+): Promise<T> {
+  return request<T>("DELETE", path, undefined, options);
 }
 
 export function getErrorMessage(error: unknown): string {
