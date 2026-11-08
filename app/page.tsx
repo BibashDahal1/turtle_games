@@ -3,40 +3,13 @@ import ScrollDriver from "@/components/ScrollDriver";
 import Hero from "@/components/sections/Hero";
 import TurtleGames from "@/components/sections/TurtleGames";
 import Turtle from "@/components/sections/Turtle";
-import {
-  btnGhost,
-  btnLight,
-  btnSolid,
-  eyebrow,
-  glass,
-  grad,
-  lead,
-  sec,
-  title,
-} from "@/components/ui/classes";
+import { btnGhost, btnLight, grad, sec } from "@/components/ui/classes";
 import Logo from "@/components/Logo";
 import WaterRipple from "@/components/effects/WaterRipple";
 import Link from "next/link";
 import VisitorGate from "@/components/visitor/VisitorGate";
-import SignOutButton from "@/components/visitor/SignOutButton";
-import CartButton from "@/components/shop/CartButton";
 import ShopRoot from "@/components/shop/ShopRoot";
-
-const NAV = ["Home", "Games", "About", "Contact"];
-
-const STEPS = [
-  {
-    n: 1,
-    title: "Build Your Deck",
-    text: "Choose your cards and plan your strategy.",
-  },
-  {
-    n: 2,
-    title: "Play Your Turns",
-    text: "Use cards, trigger effects and outplay your rivals.",
-  },
-  { n: 3, title: "Claim Victory", text: "Be the last one standing!" },
-];
+import SiteHeader from "@/components/SiteHeader";
 
 export default function Home() {
   return (
@@ -47,46 +20,18 @@ export default function Home() {
       <ScrollDriver />
       <ShopRoot />
 
-      <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-4 bg-linear-to-b from-page/80 to-transparent px-4 py-5 md:px-12">
-        <a
-          href="#home"
-          aria-label="Turtle Games home"
-          className="flex items-center"
-        >
-          <Logo priority />
-        </a>
-        <nav className="hidden gap-10 text-sm font-medium md:flex">
-          {NAV.map((n) => (
-            <a key={n} href={`#${n.toLowerCase()}`}>
-              {n}
-            </a>
-          ))}
-        </nav>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link href="/support" className={`${btnGhost} !px-4 !py-2 !text-xs`}>
-            Support us
-          </Link>
-          <CartButton className={`${btnGhost} !px-4 !py-2 !text-xs`} />
-          <SignOutButton
-            className={`${btnGhost} hidden !px-4 !py-2 !text-xs sm:inline-flex`}
-          />
-          <a href="#games" className={`${btnSolid} !px-5 !py-2 !text-xs`}>
-            Get the Game
-          </a>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="relative">
         {/* 1. HERO (full-bleed, has its own padding) */}
         <Hero />
 
-        {/* Remaining sections: built one at a time next */}
         <div className="relative z-10 px-4 sm:px-8 lg:px-16">
           {/* 2. OUR GAMES (own file: components/sections/TurtleGames.tsx) */}
           <TurtleGames />
+
           {/* ABOUT */}
           <section id="about" className={`${sec} min-h-svh`}>
-            {" "}
             <Turtle />
           </section>
 
@@ -121,7 +66,7 @@ export default function Home() {
 
       <footer
         id="blog"
-        className="relative z-10 flex flex-wrap items-center justify-between gap-4 bg-page/90 px-4 py-6 text-xs text-muted md:px-12"
+        className="relative z-10 flex flex-col items-center justify-between gap-3 bg-page/30 px-4 py-6 text-xs text-muted sm:flex-row md:px-12"
       >
         <a
           href="#home"
@@ -130,13 +75,6 @@ export default function Home() {
         >
           <Logo className="h-9 md:h-10" />
         </a>
-        <nav className="flex gap-8 text-sm font-medium">
-          {NAV.map((n) => (
-            <a key={n} href={`#${n.toLowerCase()}`}>
-              {n}
-            </a>
-          ))}
-        </nav>
         <small>© 2026 Turtle Games. All rights reserved.</small>
       </footer>
     </VisitorGate>
