@@ -10,6 +10,7 @@ export interface WaterOptions {
   lifetime: number;
   spawnDistance: number;
   quality: number;
+  backgroundDepth?: number;
   src?: string;
   calm: boolean;
 }
@@ -389,7 +390,7 @@ export function startWaterBackdrop(
 
     const dt = Math.min(0.1, (now - lastNow) / 1000);
     lastNow = now;
-    const c = updateOcean(dt);
+    const c = updateOcean(dt, o.backgroundDepth);
 
     let n = 0;
     for (let i = ripples.length - 1; i >= 0; i--)

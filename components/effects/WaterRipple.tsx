@@ -19,6 +19,8 @@ export interface WaterRippleProps {
   spawnDistance?: number;
   /** Render resolution relative to the screen (0.4 to 1). Lower is cheaper and softer. */
   quality?: number;
+  /** Keep the procedural scene at a fixed depth instead of darkening as the page scrolls. */
+  backgroundDepth?: number;
   /** Optional background image, e.g. "/hero-underwater.jpg". Leave out for the built-in underwater scene. */
   src?: string;
   /** Switch the effect off without removing the component. */
@@ -41,6 +43,7 @@ export default function WaterRipple({
   lifetime = 3600,
   spawnDistance = 30,
   quality = 0.7,
+  backgroundDepth,
   src,
   disabled = false,
 }: WaterRippleProps) {
@@ -55,10 +58,11 @@ export default function WaterRipple({
       lifetime: calm ? lifetime * 0.7 : lifetime,
       spawnDistance: calm ? spawnDistance * 2 : spawnDistance,
       quality,
+      backgroundDepth,
       src,
       calm,
     });
-  }, [intensity, lifetime, spawnDistance, quality, src, disabled]);
+  }, [intensity, lifetime, spawnDistance, quality, backgroundDepth, src, disabled]);
 
   return (
     <canvas

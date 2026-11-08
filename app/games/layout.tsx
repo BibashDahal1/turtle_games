@@ -8,10 +8,15 @@ import WaterRipple from "@/components/effects/WaterRipple";
  */
 export default function GamesLayout({ children }: { children: ReactNode }) {
   return (
-    <>
-      <WaterRipple scope="window" quality={0.65} intensity={0.7} />
+    <div className="bright-ocean relative">
+      <WaterRipple
+        scope="window"
+        quality={0.65}
+        intensity={0.7}
+        backgroundDepth={0}
+      />
       <GameSceneMount />
       {children}
-    </>
+    </div>
   );
 }

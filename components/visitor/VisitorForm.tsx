@@ -225,7 +225,12 @@ export default function VisitorForm() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-page text-ink">
-      <WaterRipple scope="window" quality={0.65} intensity={0.7} />
+      <WaterRipple
+        scope="window"
+        quality={0.65}
+        intensity={0.7}
+        backgroundDepth={0}
+      />
       {/* rigged 3D turtle: waves first, then swims its usual background route */}
       <VisitorScene />
 

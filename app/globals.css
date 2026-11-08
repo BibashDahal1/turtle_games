@@ -75,3 +75,30 @@
     --water-beam: #f3e3a9;
   }
 }
+
+.bright-ocean {
+  color-scheme: light;
+  --color-ink: #5a3512;
+  --color-muted: #8a6538;
+  --color-accent: #d47512;
+  --color-accent2: #983b08;
+  --color-panel: #fff8de;
+  --color-page: #efd592;
+  --color-onaccent: #ffffff;
+  --page-from: #fff8de;
+  --page-to: #efd592;
+  --water-top: #fff4c8;
+  --water-mid: #f3d78a;
+  --water-bot: #e0a94a;
+  --water-beam: #ffffff;
+
+  min-height: 100svh;
+  background-color: var(--color-page);
+  background-image: radial-gradient(
+    120% 80% at 70% 0%,
+    var(--page-from) 0%,
+    var(--page-to) 70%
+  );
+  background-attachment: fixed;
+  color: var(--color-ink);
+}

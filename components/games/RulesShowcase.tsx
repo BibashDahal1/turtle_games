@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { Fredoka, Lilita_One } from "next/font/google";
 import type { Game, GameRule } from "@/lib/games";
 import { eyebrow, grad, sec } from "@/components/ui/classes";
@@ -70,33 +70,9 @@ function originFor(col: number, count: number): string {
 
 export default function RulesShowcase({ game }: { game: Game }) {
   const rootRef = useRef<HTMLElement>(null);
-  const [open, setOpen] = useState(false);
-
-  // Unfold once, when the map scrolls into view.
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setOpen(true);
-      return;
-    }
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setOpen(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.15 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
   const rules: Rule[] = [...(game.rules ?? [])].sort(
     (a, b) => a.number - b.number,
   );
-  if (rules.length === 0) return null;
 
   const columns = splitIntoColumns(rules);
   const count = columns.length;
@@ -110,6 +86,71 @@ export default function RulesShowcase({ game }: { game: Game }) {
   // Used as padding so the straight text always sits inside the slanted paper.
   const fold = `calc(100cqw / ${count} * tan(${SKEW_DEG}deg) / 2)`;
 
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const animations: Animation[] = [];
+
+    root
+      .querySelectorAll<HTMLElement>("[data-paper-panel]")
+      .forEach((panel) => {
+        const delay = Number(panel.dataset.animationDelay ?? 0);
+        const origin = panel.dataset.foldOrigin;
+        const initialRotation =
+          reducedMotion || origin === "center"
+            ? "rotateY(0deg)"
+            : origin === "left"
+              ? "rotateY(-78deg)"
+              : "rotateY(78deg)";
+
+        animations.push(
+          panel.animate(
+            [
+              {
+                opacity: 0.25,
+                transform: `${initialRotation} scaleX(0.04)`,
+              },
+              { opacity: 1, transform: "rotateY(0deg) scaleX(1)" },
+            ],
+            {
+              duration: reducedMotion ? 180 : 1000,
+              delay,
+              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+              fill: "both",
+            },
+          ),
+        );
+      });
+
+    root
+      .querySelectorAll<HTMLElement>("[data-paper-rule]")
+      .forEach((rule) => {
+        const delay = Number(rule.dataset.animationDelay ?? 0);
+        animations.push(
+          rule.animate(
+            [
+              { opacity: 0, transform: "translateY(-10px)" },
+              { opacity: 1, transform: "translateY(0)" },
+            ],
+            {
+              duration: reducedMotion ? 150 : 450,
+              delay,
+              easing: "ease-out",
+              fill: "both",
+            },
+          ),
+        );
+      });
+
+    return () => animations.forEach((animation) => animation.cancel());
+  }, []);
+
+  if (rules.length === 0) return null;
+
   return (
     <section ref={rootRef} className={`${sec} items-center py-16`}>
       <div className="w-full max-w-6xl">
@@ -122,7 +163,7 @@ export default function RulesShowcase({ game }: { game: Game }) {
 
         <div
           className="[container-type:inline-size]"
-          style={{ "--fold": fold } as CSSProperties}
+          style={{ "--fold": fold, perspective: "1400px" } as CSSProperties}
         >
           <div
             className={`grid grid-cols-1 md:py-[var(--fold)] ${GRID_COLS[count]} ${body.className}`}
@@ -135,13 +176,25 @@ export default function RulesShowcase({ game }: { game: Game }) {
               return (
                 <div
                   key={colIndex}
+                  data-paper-panel
+                  data-fold-origin={
+                    count === 1
+                      ? "center"
+                      : colIndex === 0
+                        ? "right"
+                        : colIndex === count - 1
+                          ? "left"
+                          : "center"
+                  }
+                  data-animation-delay={panelDelay}
                   className={[
-                    "relative transition-[transform] duration-700 ease-out",
+                    "relative transform-gpu [transform-style:preserve-3d]",
                     originFor(colIndex, count),
-                    "motion-reduce:transition-none motion-reduce:[transform:none]",
-                    open ? "[transform:scaleX(1)]" : "[transform:scaleX(0)]",
                   ].join(" ")}
-                  style={{ transitionDelay: open ? `${panelDelay}ms` : "0ms" }}
+                  style={{
+                    opacity: 0.25,
+                    transform: "scaleX(0.04)",
+                  }}
                 >
                   {/* Paper: slanted frame + paper, drawn behind straight text */}
                   <div
@@ -177,17 +230,14 @@ export default function RulesShowcase({ game }: { game: Game }) {
                       return (
                         <li
                           key={rule.number}
-                          className={[
-                            "flex gap-4 transition-[opacity,transform] duration-500 ease-out",
-                            "motion-reduce:opacity-100 motion-reduce:transition-none motion-reduce:[transform:none]",
-                            open
-                              ? "opacity-100 [transform:translateY(0)]"
-                              : "opacity-0 [transform:translateY(-10px)]",
-                          ].join(" ")}
+                          data-paper-rule
+                          data-animation-delay={
+                            panelDelay + 400 + order * revealStep
+                          }
+                          className="flex gap-4"
                           style={{
-                            transitionDelay: open
-                              ? `${panelDelay + 500 + order * revealStep}ms`
-                              : "0ms",
+                            opacity: 0,
+                            transform: "translateY(-10px)",
                           }}
                         >
                           {/* Number badge + dashed trail to the next rule */}

@@ -21,6 +21,7 @@ export default function GameTabs({ game }: { game: Game }) {
     tabs.push({ id: "rules", label: "Rules", count: rules.length });
 
   const [active, setActive] = useState<TabId>("cards");
+  const [rulesAnimation, setRulesAnimation] = useState(0);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
 
   if (tabs.length === 0) return null;
@@ -36,15 +37,20 @@ export default function GameTabs({ game }: { game: Game }) {
     else if (event.key === "End") next = tabs.length - 1;
     else return;
     event.preventDefault();
-    setActive(tabs[next].id);
+    activateTab(tabs[next].id);
     buttons.current[next]?.focus();
+  }
+
+  function activateTab(tab: TabId) {
+    setActive(tab);
+    if (tab === "rules") setRulesAnimation((count) => count + 1);
   }
 
   const panel =
     current === "cards" ? (
       <CardShowcase game={game} />
     ) : (
-      <RulesShowcase game={gameWithRules} />
+      <RulesShowcase key={rulesAnimation} game={gameWithRules} />
     );
 
   return (
@@ -71,7 +77,7 @@ export default function GameTabs({ game }: { game: Game }) {
                   aria-selected={selected}
                   aria-controls={`game-panel-${tab.id}`}
                   tabIndex={selected ? 0 : -1}
-                  onClick={() => setActive(tab.id)}
+                  onClick={() => activateTab(tab.id)}
                   className={`rounded-full px-6 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                     selected
                       ? "bg-accent text-page"

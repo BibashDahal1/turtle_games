@@ -4,8 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 
-import { btnGhost, btnSolid, eyebrow, glass } from "@/components/ui/classes";
+import { btnGhost, btnSolid, eyebrow } from "@/components/ui/classes";
 import HomeLink from "@/components/ui/HomeLink";
+import SupportScene from "@/components/support/SupportScene";
 import { formatMoney } from "@/lib/money";
 import {
   getPaymentInvoice,
@@ -51,9 +52,11 @@ export default function PaymentReturn() {
   }, [check]);
 
   return (
-    <main className="relative z-10 flex min-h-svh items-center justify-center px-3 py-8 sm:px-5 sm:py-12">
+    <>
+      <SupportScene />
+      <main className="relative z-10 flex min-h-svh items-center justify-center px-3 py-8 sm:px-5 sm:py-12">
       <div
-        className={`${glass} my-auto w-full ${
+        className={`my-auto w-full rounded-2xl border border-accent/30 bg-transparent ${
           view.kind === "result" && view.result.status === "completed"
             ? "max-w-6xl"
             : "max-w-lg"
@@ -95,7 +98,8 @@ export default function PaymentReturn() {
           <Result result={view.result} onCheck={() => void check()} />
         )}
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 

@@ -120,7 +120,7 @@ let els: HTMLElement[] = [];
 let lastQuery = -1e9;
 
 /** call once per frame; returns the current palette */
-export function updateOcean(dt: number) {
+export function updateOcean(dt: number, fixedDepth?: number) {
   const now = performance.now();
   if (now - lastQuery > 500) {
     els = Array.from(document.querySelectorAll<HTMLElement>("section")).filter(
@@ -130,7 +130,9 @@ export function updateOcean(dt: number) {
   }
   const vh = window.innerHeight;
   const N = els.length;
-  if (N > 1) {
+  if (fixedDepth !== undefined && Number.isFinite(fixedDepth)) {
+    ocean.target = Math.min(1, Math.max(0, fixedDepth));
+  } else if (N > 1) {
     let i = 0;
     let p = 0;
     for (let j = 0; j < N; j++) {
