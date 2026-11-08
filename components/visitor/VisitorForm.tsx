@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import dynamic from "next/dynamic";
 
@@ -40,7 +40,7 @@ const EMPTY: FormValues = {
 };
 
 const inputClass =
-  "w-full rounded-xl border border-ink/20 bg-ink/5 px-4 py-2.5 text-sm text-ink " +
+  "w-full rounded-xl border border-ink/20 bg-ink/5 px-4 py-2 text-sm text-ink " +
   "placeholder:text-muted backdrop-blur-sm transition-colors " +
   "hover:border-accent/50 focus:bg-ink/10 " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
@@ -59,6 +59,7 @@ interface FieldProps {
   type?: string;
   autoComplete?: string;
   inputMode?: "numeric" | "tel" | "email" | "text";
+  /** full responsive span classes, e.g. "col-span-3 sm:col-span-2" */
   span: string;
 }
 
@@ -80,7 +81,7 @@ function Field({
   const hasError = Boolean(errors?.length);
 
   return (
-    <div className={`col-span-6 ${span}`}>
+    <div className={span}>
       <label htmlFor={id} className="mb-1 block text-xs font-semibold">
         {label}
         {optional && (
@@ -119,12 +120,20 @@ function isRegisterFailure(error: unknown): error is RegisterFailure {
   );
 }
 
+// breathing room kept between the form and the screen edges (px)
+const EDGE_X = 16;
+const EDGE_Y = 12;
+
 export default function VisitorForm() {
   const dispatch = useAppDispatch();
   const [values, setValues] = useState<FormValues>(EMPTY);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const mainRef = useRef<HTMLElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [scale, setScale] = useState(1);
 
   // the form page never scrolls
   useEffect(() => {
@@ -139,6 +148,31 @@ export default function VisitorForm() {
       html.style.overflow = prevHtml;
       body.style.overflow = prevBody;
     };
+  }, []);
+
+  // Scale the form down (never up) so it always fits the viewport.
+  // offsetWidth/offsetHeight ignore CSS transforms, so measuring the form
+  // never feeds back into itself.
+  useLayoutEffect(() => {
+    const main = mainRef.current;
+    const form = formRef.current;
+    if (!main || !form) return;
+
+    const fit = () => {
+      const availW = main.clientWidth - EDGE_X * 2;
+      const availH = main.clientHeight - EDGE_Y * 2;
+      const w = form.offsetWidth;
+      const h = form.offsetHeight;
+      if (!w || !h || availW <= 0 || availH <= 0) return;
+      const next = Math.min(1, availW / w, availH / h);
+      setScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
+    };
+
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(main); // viewport changes
+    observer.observe(form); // content changes (errors, fonts, wrapping)
+    return () => observer.disconnect();
   }, []);
 
   const onText =
@@ -195,26 +229,31 @@ export default function VisitorForm() {
       {/* rigged 3D turtle: waves first, then swims its usual background route */}
       <VisitorScene />
 
-      <main className="relative z-10 flex h-svh items-center justify-center overflow-hidden px-4">
+      <main
+        ref={mainRef}
+        className="relative z-10 flex h-dvh items-center justify-center overflow-hidden px-4"
+      >
         <form
+          ref={formRef}
           onSubmit={onSubmit}
-          className={`${glass} w-full max-w-2xl !bg-page/25 p-5 backdrop-blur-md sm:p-7`}
+          style={{ transform: `scale(${scale})`, transformOrigin: "center" }}
+          className={`${glass} w-full max-w-2xl shrink-0 !bg-page/25 p-4 backdrop-blur-md sm:p-7 max-h-none`}
           aria-labelledby="visitor-title"
         >
-          <Logo className="mb-4 h-10" />
+          <Logo className="mb-3 h-8 sm:mb-4 sm:h-10" />
           <p className={eyebrow}>Before you dive in</p>
           <h1
             id="visitor-title"
-            className={`${grad} mb-1 text-[clamp(1.6rem,3.6vw,2.3rem)]`}
+            className={`${grad} mb-1 text-[clamp(1.4rem,3.6vw,2.3rem)]`}
           >
             Tell us who is visiting
           </h1>
-          <p className="mb-5 text-sm text-ink/85">
+          <p className="mb-3 text-sm text-ink/85 sm:mb-5">
             Fill this in once. This browser will remember you, so you will not
             be asked again.
           </p>
 
-          <div className="grid grid-cols-6 gap-x-4 gap-y-3">
+          <div className="grid grid-cols-6 gap-x-3 gap-y-2.5 sm:gap-x-4 sm:gap-y-3">
             <Field
               name="firstName"
               label="First name"
@@ -223,7 +262,7 @@ export default function VisitorForm() {
               errors={fieldErrors.firstName}
               required
               autoComplete="given-name"
-              span="sm:col-span-2"
+              span="col-span-3 sm:col-span-2"
             />
             <Field
               name="middleName"
@@ -233,7 +272,7 @@ export default function VisitorForm() {
               errors={fieldErrors.middleName}
               optional
               autoComplete="additional-name"
-              span="sm:col-span-2"
+              span="col-span-3 sm:col-span-2"
             />
             <Field
               name="lastName"
@@ -243,7 +282,7 @@ export default function VisitorForm() {
               errors={fieldErrors.lastName}
               required
               autoComplete="family-name"
-              span="sm:col-span-2"
+              span="col-span-6 sm:col-span-2"
             />
             <Field
               name="age"
@@ -254,7 +293,7 @@ export default function VisitorForm() {
               onChange={onText("age")}
               errors={fieldErrors.age}
               required
-              span="sm:col-span-2"
+              span="col-span-2"
             />
             <Field
               name="email"
@@ -266,7 +305,7 @@ export default function VisitorForm() {
               errors={fieldErrors.email}
               required
               autoComplete="email"
-              span="sm:col-span-4"
+              span="col-span-4"
             />
             <Field
               name="country"
@@ -276,7 +315,7 @@ export default function VisitorForm() {
               errors={fieldErrors.country}
               required
               autoComplete="country-name"
-              span="sm:col-span-3"
+              span="col-span-3"
             />
             <Field
               name="city"
@@ -286,7 +325,7 @@ export default function VisitorForm() {
               errors={fieldErrors.city}
               optional
               autoComplete="address-level2"
-              span="sm:col-span-3"
+              span="col-span-3"
             />
             <Field
               name="phone"
@@ -298,7 +337,7 @@ export default function VisitorForm() {
               errors={fieldErrors.phone}
               optional
               autoComplete="tel"
-              span="sm:col-span-6"
+              span="col-span-6"
             />
 
             <div className="col-span-6">
@@ -330,7 +369,7 @@ export default function VisitorForm() {
           </div>
 
           {formError && (
-            <p role="alert" className="mt-4 text-sm text-red-400">
+            <p role="alert" className="mt-3 text-sm text-red-400">
               {formError}
             </p>
           )}
@@ -338,7 +377,7 @@ export default function VisitorForm() {
           <button
             type="submit"
             disabled={submitting}
-            className={`${btnSolid} mt-5 w-full disabled:opacity-60`}
+            className={`${btnSolid} mt-4 w-full disabled:opacity-60 sm:mt-5`}
           >
             {submitting ? "Entering…" : "Enter the site"}
           </button>

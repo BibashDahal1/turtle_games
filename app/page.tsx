@@ -7,12 +7,8 @@ import {
   btnGhost,
   btnLight,
   btnSolid,
-  eyebrow,
-  glass,
   grad,
-  lead,
   sec,
-  title,
 } from "@/components/ui/classes";
 import Logo from "@/components/Logo";
 import WaterRipple from "@/components/effects/WaterRipple";
@@ -21,21 +17,7 @@ import SignOutButton from "@/components/visitor/SignOutButton";
 import CartButton from "@/components/shop/CartButton";
 import ShopRoot from "@/components/shop/ShopRoot";
 
-const NAV = ["Home", "Games", "About", "Contact"];
-
-const STEPS = [
-  {
-    n: 1,
-    title: "Build Your Deck",
-    text: "Choose your cards and plan your strategy.",
-  },
-  {
-    n: 2,
-    title: "Play Your Turns",
-    text: "Use cards, trigger effects and outplay your rivals.",
-  },
-  { n: 3, title: "Claim Victory", text: "Be the last one standing!" },
-];
+const NAV = ["Home", "Games", "About", "Support"];
 
 export default function Home() {
   return (
@@ -66,7 +48,7 @@ export default function Home() {
           <SignOutButton
             className={`${btnGhost} hidden !px-4 !py-2 !text-xs sm:inline-flex`}
           />
-          <a href="#cta" className={`${btnSolid} !px-5 !py-2 !text-xs`}>
+          <a href="#games" className={`${btnSolid} !px-5 !py-2 !text-xs`}>
             Get the Game
           </a>
         </div>
@@ -86,9 +68,9 @@ export default function Home() {
             <Turtle />
           </section>
 
-          {/* CTA */}
+          {/* CTA / SUPPORT */}
           <section
-            id="contact"
+            id="support"
             className={`${sec} min-h-[70svh] items-center text-center`}
           >
             <h2
@@ -109,7 +91,7 @@ export default function Home() {
 
       <footer
         id="blog"
-        className="relative z-10 flex flex-wrap items-center justify-between gap-4 bg-page/90 px-4 py-6 text-xs text-muted md:px-12"
+        className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-t border-ink/15 bg-transparent px-4 py-6 text-xs text-muted backdrop-blur-sm md:px-12"
       >
         <a
           href="#home"
@@ -118,13 +100,7 @@ export default function Home() {
         >
           <Logo className="h-9 md:h-10" />
         </a>
-        <nav className="flex gap-8 text-sm font-medium">
-          {NAV.map((n) => (
-            <a key={n} href={`#${n.toLowerCase()}`}>
-              {n}
-            </a>
-          ))}
-        </nav>
+
         <small>© 2026 Turtle Games. All rights reserved.</small>
       </footer>
     </VisitorGate>
