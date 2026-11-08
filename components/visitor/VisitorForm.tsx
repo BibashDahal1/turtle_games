@@ -248,10 +248,6 @@ export default function VisitorForm() {
           >
             Tell us who is visiting
           </h1>
-          <p className="mb-3 text-sm text-ink/85 sm:mb-5">
-            Fill this in once. This browser will remember you, so you will not
-            be asked again.
-          </p>
 
           <div className="grid grid-cols-6 gap-x-3 gap-y-2.5 sm:gap-x-4 sm:gap-y-3">
             <Field

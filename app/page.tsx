@@ -7,17 +7,36 @@ import {
   btnGhost,
   btnLight,
   btnSolid,
+  eyebrow,
+  glass,
   grad,
+  lead,
   sec,
+  title,
 } from "@/components/ui/classes";
 import Logo from "@/components/Logo";
 import WaterRipple from "@/components/effects/WaterRipple";
+import Link from "next/link";
 import VisitorGate from "@/components/visitor/VisitorGate";
 import SignOutButton from "@/components/visitor/SignOutButton";
 import CartButton from "@/components/shop/CartButton";
 import ShopRoot from "@/components/shop/ShopRoot";
 
-const NAV = ["Home", "Games", "About", "Support"];
+const NAV = ["Home", "Games", "About", "Contact"];
+
+const STEPS = [
+  {
+    n: 1,
+    title: "Build Your Deck",
+    text: "Choose your cards and plan your strategy.",
+  },
+  {
+    n: 2,
+    title: "Play Your Turns",
+    text: "Use cards, trigger effects and outplay your rivals.",
+  },
+  { n: 3, title: "Claim Victory", text: "Be the last one standing!" },
+];
 
 export default function Home() {
   return (
@@ -44,6 +63,9 @@ export default function Home() {
           ))}
         </nav>
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/support" className={`${btnGhost} !px-4 !py-2 !text-xs`}>
+            Support us
+          </Link>
           <CartButton className={`${btnGhost} !px-4 !py-2 !text-xs`} />
           <SignOutButton
             className={`${btnGhost} hidden !px-4 !py-2 !text-xs sm:inline-flex`}
@@ -68,9 +90,9 @@ export default function Home() {
             <Turtle />
           </section>
 
-          {/* CTA / SUPPORT */}
+          {/* CTA */}
           <section
-            id="support"
+            id="contact"
             className={`${sec} min-h-[70svh] items-center text-center`}
           >
             <h2
@@ -80,18 +102,26 @@ export default function Home() {
               Ready to Dive In?
             </h2>
             <p data-reveal className="mb-6 text-ink/85">
-              Get your copy of Ocean Legends today and start your journey!
+              Get your copy of our games today and start your journey!
             </p>
-            <a data-reveal href="#" className={btnLight}>
-              Buy Now
-            </a>
+            <div
+              data-reveal
+              className="flex flex-wrap items-center justify-center gap-3"
+            >
+              <a href="#games" className={btnLight}>
+                Buy Now
+              </a>
+              <Link href="/support" className={btnGhost}>
+                Support us
+              </Link>
+            </div>
           </section>
         </div>
       </main>
 
       <footer
         id="blog"
-        className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-t border-ink/15 bg-transparent px-4 py-6 text-xs text-muted backdrop-blur-sm md:px-12"
+        className="relative z-10 flex flex-wrap items-center justify-between gap-4 bg-page/90 px-4 py-6 text-xs text-muted md:px-12"
       >
         <a
           href="#home"
@@ -100,7 +130,13 @@ export default function Home() {
         >
           <Logo className="h-9 md:h-10" />
         </a>
-
+        <nav className="flex gap-8 text-sm font-medium">
+          {NAV.map((n) => (
+            <a key={n} href={`#${n.toLowerCase()}`}>
+              {n}
+            </a>
+          ))}
+        </nav>
         <small>© 2026 Turtle Games. All rights reserved.</small>
       </footer>
     </VisitorGate>

@@ -53,7 +53,7 @@ async function request<T>(
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
       // The browser attaches the HttpOnly sign-in cookie by itself; this code never sees the token.
-      credentials: "same-origin",
+      credentials: "include",
       cache: "no-store",
       signal: options.signal,
       keepalive: options.keepalive,
@@ -88,6 +88,48 @@ async function request<T>(
  */
 export function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
   return request<T>("GET", path, undefined, { signal });
+}
+
+export async function apiGetBlob(url: string): Promise<Blob> {
+  const target = new URL(url, window.location.origin);
+  if (target.origin !== window.location.origin) {
+    throw new ApiError("The download URL must use this site.", 0);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(target, {
+      credentials: "include",
+      cache: "no-store",
+    });
+  } catch {
+    throw new ApiError(
+      "Cannot reach the server. Check your connection and try again.",
+      0,
+    );
+  }
+
+  if (response.status === 401) unauthorizedHandler?.();
+
+  if (!response.ok) {
+    const data: unknown = await response.json().catch(() => null);
+    throw new ApiError(
+      messageFromBody(data, response.status),
+      response.status,
+      data,
+    );
+  }
+
+  const contentType = response.headers
+    .get("content-type")
+    ?.split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+  if (contentType !== "application/pdf") {
+    throw new ApiError("The server did not return a PDF invoice.", response.status);
+  }
+
+  return response.blob();
 }
 
 export function apiPost<T>(

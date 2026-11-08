@@ -46,10 +46,10 @@ export default function GameView({ slug }: { slug: string }) {
         {/* text column: half the width on tablets and desktops, so the 3D box gets the other half */}
         <div className="max-w-[560px] md:w-1/2">
           <HomeLink
-            hash="games"
+            hash="home"
             className="mb-6 inline-block text-sm font-medium text-muted hover:text-ink"
           >
-            ← Back to all games
+            ← Back to homepage
           </HomeLink>
           <p className={eyebrow}>Turtle Games</p>
           <h1 className={title}>{game.name}</h1>
@@ -71,7 +71,7 @@ export default function GameView({ slug }: { slug: string }) {
           </ul>
 
           <div className="flex flex-wrap gap-3">
-            <HomeLink hash="cta" className={btnSolid}>
+            <HomeLink hash="contact" className={btnSolid}>
               Get the Game
             </HomeLink>
             <HomeLink hash="games" className={btnGhost}>
@@ -124,10 +124,10 @@ function GameError({
     <section className={`${sec} min-h-svh gap-10 py-28`}>
       <div className="max-w-[560px]">
         <HomeLink
-          hash="games"
+          hash="home"
           className="mb-6 inline-block text-sm font-medium text-muted hover:text-ink"
         >
-          ← Back to all games
+          ← Back to homepage
         </HomeLink>
         <h1 className={title}>Couldn&apos;t load this game</h1>
         <p className={lead}>
