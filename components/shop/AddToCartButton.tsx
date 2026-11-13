@@ -6,6 +6,8 @@ import { btnGhost, btnSolid } from "@/components/ui/classes";
 import { formatMoney } from "@/lib/money";
 import type { Game } from "@/lib/games";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { selectVisitorStatus } from "@/store/visitorSlice";
+import { useVisitorAuth } from "@/components/visitor/VisitorAuthProvider";
 import {
   MAX_QUANTITY_PER_GAME,
   addToCart,
@@ -25,6 +27,8 @@ export default function AddToCartButton({
 }: AddToCartButtonProps) {
   const dispatch = useAppDispatch();
   const inCart = useAppSelector((state) => selectQuantityOf(state, game.slug));
+  const visitorStatus = useAppSelector(selectVisitorStatus);
+  const { openSignIn } = useVisitorAuth();
   const [added, setAdded] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -39,13 +43,21 @@ export default function AddToCartButton({
 
   const atMax = inCart >= MAX_QUANTITY_PER_GAME;
 
-  function add() {
+  function addToSignedInCart() {
     dispatch(addToCart({ slug: game.slug }));
     // Show the cart straight away so the buyer sees what was added.
     dispatch(openCart());
     setAdded(true);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setAdded(false), 1600);
+  }
+
+  function add() {
+    if (visitorStatus !== "signedIn") {
+      openSignIn(undefined, addToSignedInCart);
+      return;
+    }
+    addToSignedInCart();
   }
 
   return (
@@ -57,14 +69,20 @@ export default function AddToCartButton({
       <button
         type="button"
         onClick={add}
-        disabled={atMax}
+        disabled={atMax && visitorStatus === "signedIn"}
         aria-label={`Add ${game.name} to cart`}
         className={`${className ?? btnSolid} disabled:opacity-60`}
       >
-        {atMax ? "Maximum in cart" : added ? "Added ✓" : "Add to cart"}
+        {visitorStatus !== "signedIn"
+          ? "Sign in to add"
+          : atMax
+            ? "Maximum in cart"
+            : added
+              ? "Added ✓"
+              : "Add to cart"}
       </button>
 
-      {inCart > 0 && (
+      {visitorStatus === "signedIn" && inCart > 0 && (
         <button
           type="button"
           onClick={() => dispatch(openCart())}

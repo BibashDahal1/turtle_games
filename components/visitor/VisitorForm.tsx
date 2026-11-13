@@ -124,7 +124,15 @@ function isRegisterFailure(error: unknown): error is RegisterFailure {
 const EDGE_X = 16;
 const EDGE_Y = 12;
 
-export default function VisitorForm() {
+type VisitorFormProps = {
+  presentation?: "page" | "dialog";
+  onSuccess?: () => void;
+};
+
+export default function VisitorForm({
+  presentation = "page",
+  onSuccess,
+}: VisitorFormProps) {
   const dispatch = useAppDispatch();
   const [values, setValues] = useState<FormValues>(EMPTY);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -137,6 +145,7 @@ export default function VisitorForm() {
 
   // the form page never scrolls
   useEffect(() => {
+    if (presentation !== "page") return;
     const html = document.documentElement;
     const body = document.body;
     const prevHtml = html.style.overflow;
@@ -148,12 +157,13 @@ export default function VisitorForm() {
       html.style.overflow = prevHtml;
       body.style.overflow = prevBody;
     };
-  }, []);
+  }, [presentation]);
 
   // Scale the form down (never up) so it always fits the viewport.
   // offsetWidth/offsetHeight ignore CSS transforms, so measuring the form
   // never feeds back into itself.
   useLayoutEffect(() => {
+    if (presentation !== "page") return;
     const main = mainRef.current;
     const form = formRef.current;
     if (!main || !form) return;
@@ -173,7 +183,7 @@ export default function VisitorForm() {
     observer.observe(main); // viewport changes
     observer.observe(form); // content changes (errors, fonts, wrapping)
     return () => observer.disconnect();
-  }, []);
+  }, [presentation]);
 
   const onText =
     (name: TextField) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -196,7 +206,7 @@ export default function VisitorForm() {
     setFieldErrors({});
 
     try {
-      // On success the visitor is signed in and the gate replaces this form with the site.
+      // Registration updates shared auth state; the page gate or dialog handles the next step.
       await dispatch(
         registerVisitor({
           firstName: values.firstName.trim(),
@@ -210,6 +220,7 @@ export default function VisitorForm() {
           consent: values.consent,
         }),
       ).unwrap();
+      onSuccess?.();
     } catch (error) {
       const failure: RegisterFailure = isRegisterFailure(error)
         ? error
@@ -222,6 +233,164 @@ export default function VisitorForm() {
       setSubmitting(false);
     }
   }
+
+  const form = (
+    <form
+      ref={formRef}
+      onSubmit={onSubmit}
+      style={
+        presentation === "page"
+          ? { transform: `scale(${scale})`, transformOrigin: "center" }
+          : undefined
+      }
+      className={`${glass} w-full max-w-2xl shrink-0 !border-white/35 !bg-transparent p-4 shadow-none sm:p-7 ${
+        presentation === "dialog"
+          ? "max-h-[calc(100dvh-11rem)] overflow-y-auto overscroll-contain"
+          : "max-h-none"
+      }`}
+      aria-labelledby="visitor-title"
+    >
+      {presentation === "page" && <Logo className="mb-3 h-8 sm:mb-4 sm:h-10" />}
+      <p className={eyebrow}>Before you dive in</p>
+      <h1
+        id="visitor-title"
+        className={`${grad} mb-1 text-[clamp(1.4rem,3.6vw,2.3rem)]`}
+      >
+        Tell us who is visiting
+      </h1>
+
+      <div className="grid grid-cols-6 gap-x-3 gap-y-2.5 sm:gap-x-4 sm:gap-y-3">
+        <Field
+          name="firstName"
+          label="First name"
+          value={values.firstName}
+          onChange={onText("firstName")}
+          errors={fieldErrors.firstName}
+          required
+          autoComplete="given-name"
+          span="col-span-3 sm:col-span-2"
+        />
+        <Field
+          name="middleName"
+          label="Middle name"
+          value={values.middleName}
+          onChange={onText("middleName")}
+          errors={fieldErrors.middleName}
+          optional
+          autoComplete="additional-name"
+          span="col-span-3 sm:col-span-2"
+        />
+        <Field
+          name="lastName"
+          label="Last name"
+          value={values.lastName}
+          onChange={onText("lastName")}
+          errors={fieldErrors.lastName}
+          required
+          autoComplete="family-name"
+          span="col-span-6 sm:col-span-2"
+        />
+        <Field
+          name="age"
+          label="Age"
+          type="number"
+          inputMode="numeric"
+          value={values.age}
+          onChange={onText("age")}
+          errors={fieldErrors.age}
+          required
+          span="col-span-2"
+        />
+        <Field
+          name="email"
+          label="Email"
+          type="email"
+          inputMode="email"
+          value={values.email}
+          onChange={onText("email")}
+          errors={fieldErrors.email}
+          required
+          autoComplete="email"
+          span="col-span-4"
+        />
+        <Field
+          name="country"
+          label="Country"
+          value={values.country}
+          onChange={onText("country")}
+          errors={fieldErrors.country}
+          required
+          autoComplete="country-name"
+          span="col-span-3"
+        />
+        <Field
+          name="city"
+          label="City"
+          value={values.city}
+          onChange={onText("city")}
+          errors={fieldErrors.city}
+          optional
+          autoComplete="address-level2"
+          span="col-span-3"
+        />
+        <Field
+          name="phone"
+          label="Phone"
+          type="tel"
+          inputMode="tel"
+          value={values.phone}
+          onChange={onText("phone")}
+          errors={fieldErrors.phone}
+          optional
+          autoComplete="tel"
+          span="col-span-6"
+        />
+
+        <div className="col-span-6">
+          <label className="flex items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={values.consent}
+              onChange={(event) =>
+                setValues((prev) => ({
+                  ...prev,
+                  consent: event.target.checked,
+                }))
+              }
+              required
+              aria-invalid={Boolean(fieldErrors.consent?.length)}
+              className="mt-0.5 size-4 shrink-0 accent-accent"
+            />
+            <span>
+              I agree that Turtle Games may store these details so I can visit
+              the site.
+            </span>
+          </label>
+          {fieldErrors.consent?.length ? (
+            <p role="alert" className="mt-1 text-xs text-red-400">
+              {fieldErrors.consent.join(" ")}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      {formError && (
+        <p role="alert" className="mt-3 text-sm text-red-400">
+          {formError}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={submitting}
+        className={`${btnSolid} mt-4 w-full disabled:opacity-60 sm:mt-5`}
+      >
+        {submitting ? "Entering…" : "Enter the site"}
+      </button>
+    </form>
+  );
+
+  if (presentation === "dialog") return form;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-page text-ink">
@@ -238,151 +407,7 @@ export default function VisitorForm() {
         ref={mainRef}
         className="relative z-10 flex h-dvh items-center justify-center overflow-hidden px-4"
       >
-        <form
-          ref={formRef}
-          onSubmit={onSubmit}
-          style={{ transform: `scale(${scale})`, transformOrigin: "center" }}
-          className={`${glass} w-full max-w-2xl shrink-0 !bg-page/25 p-4 backdrop-blur-md sm:p-7 max-h-none`}
-          aria-labelledby="visitor-title"
-        >
-          <Logo className="mb-3 h-8 sm:mb-4 sm:h-10" />
-          <p className={eyebrow}>Before you dive in</p>
-          <h1
-            id="visitor-title"
-            className={`${grad} mb-1 text-[clamp(1.4rem,3.6vw,2.3rem)]`}
-          >
-            Tell us who is visiting
-          </h1>
-
-          <div className="grid grid-cols-6 gap-x-3 gap-y-2.5 sm:gap-x-4 sm:gap-y-3">
-            <Field
-              name="firstName"
-              label="First name"
-              value={values.firstName}
-              onChange={onText("firstName")}
-              errors={fieldErrors.firstName}
-              required
-              autoComplete="given-name"
-              span="col-span-3 sm:col-span-2"
-            />
-            <Field
-              name="middleName"
-              label="Middle name"
-              value={values.middleName}
-              onChange={onText("middleName")}
-              errors={fieldErrors.middleName}
-              optional
-              autoComplete="additional-name"
-              span="col-span-3 sm:col-span-2"
-            />
-            <Field
-              name="lastName"
-              label="Last name"
-              value={values.lastName}
-              onChange={onText("lastName")}
-              errors={fieldErrors.lastName}
-              required
-              autoComplete="family-name"
-              span="col-span-6 sm:col-span-2"
-            />
-            <Field
-              name="age"
-              label="Age"
-              type="number"
-              inputMode="numeric"
-              value={values.age}
-              onChange={onText("age")}
-              errors={fieldErrors.age}
-              required
-              span="col-span-2"
-            />
-            <Field
-              name="email"
-              label="Email"
-              type="email"
-              inputMode="email"
-              value={values.email}
-              onChange={onText("email")}
-              errors={fieldErrors.email}
-              required
-              autoComplete="email"
-              span="col-span-4"
-            />
-            <Field
-              name="country"
-              label="Country"
-              value={values.country}
-              onChange={onText("country")}
-              errors={fieldErrors.country}
-              required
-              autoComplete="country-name"
-              span="col-span-3"
-            />
-            <Field
-              name="city"
-              label="City"
-              value={values.city}
-              onChange={onText("city")}
-              errors={fieldErrors.city}
-              optional
-              autoComplete="address-level2"
-              span="col-span-3"
-            />
-            <Field
-              name="phone"
-              label="Phone"
-              type="tel"
-              inputMode="tel"
-              value={values.phone}
-              onChange={onText("phone")}
-              errors={fieldErrors.phone}
-              optional
-              autoComplete="tel"
-              span="col-span-6"
-            />
-
-            <div className="col-span-6">
-              <label className="flex items-start gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  checked={values.consent}
-                  onChange={(event) =>
-                    setValues((prev) => ({
-                      ...prev,
-                      consent: event.target.checked,
-                    }))
-                  }
-                  required
-                  aria-invalid={Boolean(fieldErrors.consent?.length)}
-                  className="mt-0.5 size-4 shrink-0 accent-accent"
-                />
-                <span>
-                  I agree that Turtle Games may store these details so I can
-                  visit the site.
-                </span>
-              </label>
-              {fieldErrors.consent?.length ? (
-                <p role="alert" className="mt-1 text-xs text-red-400">
-                  {fieldErrors.consent.join(" ")}
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          {formError && (
-            <p role="alert" className="mt-3 text-sm text-red-400">
-              {formError}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className={`${btnSolid} mt-4 w-full disabled:opacity-60 sm:mt-5`}
-          >
-            {submitting ? "Entering…" : "Enter the site"}
-          </button>
-        </form>
+        {form}
       </main>
     </div>
   );

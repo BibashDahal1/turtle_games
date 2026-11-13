@@ -6,15 +6,13 @@ import Turtle from "@/components/sections/Turtle";
 import { btnGhost, btnLight, grad, sec } from "@/components/ui/classes";
 import Logo from "@/components/Logo";
 import WaterRipple from "@/components/effects/WaterRipple";
-import Link from "next/link";
-import VisitorGate from "@/components/visitor/VisitorGate";
 import ShopRoot from "@/components/shop/ShopRoot";
 import SiteHeader from "@/components/SiteHeader";
+import SupportAccessLink from "@/components/visitor/SupportAccessLink";
 
 export default function Home() {
   return (
-    // The gate lives in the PAGE (not the layout) so the layout always renders {children}.
-    <VisitorGate>
+    <>
       <WaterRipple scope="window" quality={0.65} intensity={0.7} />
       <SceneMount />
       <ScrollDriver />
@@ -56,9 +54,9 @@ export default function Home() {
               <a href="#games" className={btnLight}>
                 Buy Now
               </a>
-              <Link href="/support" className={btnGhost}>
+              <SupportAccessLink className={btnGhost}>
                 Support us
-              </Link>
+              </SupportAccessLink>
             </div>
           </section>
         </div>
@@ -77,6 +75,6 @@ export default function Home() {
         </a>
         <small>© 2026 Turtle Games. All rights reserved.</small>
       </footer>
-    </VisitorGate>
+    </>
   );
 }

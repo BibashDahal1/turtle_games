@@ -45,7 +45,7 @@ function GamesList() {
     return (
       <div className="max-w-[560px]">
         <p className={lead}>
-          Couldn&apos;t load the games: {error ?? "something went wrong"}.
+          Couldn&apos;t load the games: {error ?? "something went wrong"}
         </p>
         <button type="button" onClick={retry} className={btnSolid}>
           Try again

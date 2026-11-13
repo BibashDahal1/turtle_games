@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import TurtleLoader from "@/components/TurtleLoader";
 import TurtleModelPreloader from "@/components/TurtleModelPreloader";
 import StoreProvider from "@/store/StoreProvider";
+import VisitorAuthProvider from "@/components/visitor/VisitorAuthProvider";
 import "./globals.css";
 
 const font = Plus_Jakarta_Sans({
@@ -55,7 +56,9 @@ export default function RootLayout({
         <TurtleModelPreloader />
 
         <Suspense fallback={null}>
-          <StoreProvider>{children}</StoreProvider>
+          <StoreProvider>
+            <VisitorAuthProvider>{children}</VisitorAuthProvider>
+          </StoreProvider>
         </Suspense>
       </body>
     </html>

@@ -6,11 +6,17 @@ import CartButton from "@/components/shop/CartButton";
 import ConfirmSignOut from "@/components/ConfirmSignOut";
 import { btnGhost } from "@/components/ui/classes";
 import { NAV } from "@/lib/nav";
+import { useAppSelector } from "@/store/hooks";
+import { selectVisitorStatus } from "@/store/visitorSlice";
+import { useVisitorAuth } from "@/components/visitor/VisitorAuthProvider";
+import SupportAccessLink from "@/components/visitor/SupportAccessLink";
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("home");
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const visitorStatus = useAppSelector(selectVisitorStatus);
+  const { openSignIn } = useVisitorAuth();
 
   // Close on Escape and return focus to the toggle button
   useEffect(() => {
@@ -97,6 +103,17 @@ export default function SiteHeader() {
         >
           {NAV.map((n) => {
             const id = n.toLowerCase();
+            if (id === "support") {
+              return (
+                <SupportAccessLink
+                  key={n}
+                  className={linkCls(id)}
+                  onClick={() => setOpen(false)}
+                >
+                  {n}
+                </SupportAccessLink>
+              );
+            }
             return (
               <a
                 key={n}
@@ -111,10 +128,20 @@ export default function SiteHeader() {
           })}
         </nav>
 
-        {/* Desktop actions: cart + sign out (with confirmation) */}
+        {/* Desktop actions: cart + sign-in state */}
         <div className="hidden items-center gap-3 lg:flex">
           <CartButton className={`${btnGhost} !px-4 !py-2 !text-xs`} />
-          <ConfirmSignOut className={`${btnGhost} !px-4 !py-2 !text-xs`} />
+          {visitorStatus === "signedIn" ? (
+            <ConfirmSignOut className={`${btnGhost} !px-4 !py-2 !text-xs`} />
+          ) : (
+            <button
+              type="button"
+              onClick={() => openSignIn()}
+              className={`${btnGhost} !px-4 !py-2 !text-xs`}
+            >
+              Sign in
+            </button>
+          )}
         </div>
 
         {/* Mobile / tablet: cart + hamburger */}
@@ -162,6 +189,17 @@ export default function SiteHeader() {
         >
           {NAV.map((n) => {
             const id = n.toLowerCase();
+            if (id === "support") {
+              return (
+                <SupportAccessLink
+                  key={n}
+                  className={`border-b border-ink/10 py-4 text-2xl font-semibold ${linkCls(id)}`}
+                  onClick={() => setOpen(false)}
+                >
+                  {n}
+                </SupportAccessLink>
+              );
+            }
             return (
               <a
                 key={n}
@@ -176,7 +214,20 @@ export default function SiteHeader() {
           })}
 
           <div className="mt-6 flex flex-col gap-3 pb-[env(safe-area-inset-bottom)]">
-            <ConfirmSignOut className={`${btnGhost} w-full justify-center`} />
+            {visitorStatus === "signedIn" ? (
+              <ConfirmSignOut className={`${btnGhost} w-full justify-center`} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  openSignIn();
+                }}
+                className={`${btnGhost} w-full justify-center`}
+              >
+                Sign in
+              </button>
+            )}
           </div>
         </nav>
       </div>

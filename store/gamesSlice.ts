@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { apiGet, getErrorMessage } from "@/lib/api";
+import { ApiError, apiGet, getErrorMessage } from "@/lib/api";
 import type { Game } from "@/lib/games";
 
 export type LoadStatus = "idle" | "loading" | "succeeded" | "failed";
@@ -32,6 +32,11 @@ export const fetchGames = createAsyncThunk<
     try {
       return await apiGet<Game[]>("/games/", signal);
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        return rejectWithValue(
+          "The games catalog is not available to signed-out visitors yet. Please try again later.",
+        );
+      }
       return rejectWithValue(getErrorMessage(error));
     }
   },

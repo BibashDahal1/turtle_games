@@ -1,39 +1,25 @@
 "use client";
 
-import { useEffect } from "react";
 import type { ReactNode } from "react";
 
-import { setUnauthorizedHandler } from "@/lib/api";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   restoreSession,
   selectVisitorError,
   selectVisitorStatus,
-  sessionExpired,
 } from "@/store/visitorSlice";
 import { btnSolid, glass, sec } from "@/components/ui/classes";
 
 import VisitorForm from "./VisitorForm";
 
 /**
- * Shows the site only to signed-in visitors.
- * Must be rendered inside <StoreProvider> (which itself sits inside <Suspense>).
+ * Protects pages that require a signed-in visitor.
+ * Must be rendered inside the root visitor auth and store providers.
  */
 export default function VisitorGate({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();
   const status = useAppSelector(selectVisitorStatus);
   const error = useAppSelector(selectVisitorError);
-
-  // Any 401 from the API means the cookie is gone or invalid: go back to the form.
-  useEffect(() => {
-    setUnauthorizedHandler(() => dispatch(sessionExpired()));
-    return () => setUnauthorizedHandler(null);
-  }, [dispatch]);
-
-  // On every page load, ask the server whether this browser's cookie is still valid.
-  useEffect(() => {
-    void dispatch(restoreSession());
-  }, [dispatch]);
 
   if (status === "signedIn") return <>{children}</>;
 
